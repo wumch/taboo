@@ -1,8 +1,16 @@
-//
-// Created by wumch on 16-1-26.
-//
 
-#ifndef TABOO_ATTR_HPP
-#define TABOO_ATTR_HPP
+#pragma once
 
-#endif //TABOO_ATTR_HPP
+#include <string>
+
+namespace taboo
+{
+
+class Attr
+{
+public:
+    std::string name;
+    void* value;
+};
+
+}

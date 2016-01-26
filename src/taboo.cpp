@@ -8,8 +8,20 @@ curl -vvv http://localhost:9002     \
 #include <iostream>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include "trie.hpp"
 
 typedef websocketpp::server<websocketpp::config::asio> server;
+
+void test_trie()
+{
+    taboo::Trie trie;
+    taboo::Item item(10086);
+    trie.attach("abcdefg", item);
+    taboo::ItemIdList items = trie.match("abcdefg");
+    CS_DUMP(items[0]);
+    items = trie.match("abcdefg4");
+    CS_DUMP(items.size());
+}
 
 void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
 {
@@ -18,6 +30,10 @@ void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
 
 int main()
 {
+    CS_SAY("building trie");
+    test_trie();
+    CS_SAY("build_trie done");
+
     server print_server;
 
     print_server.set_message_handler(&on_message);

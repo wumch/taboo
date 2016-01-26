@@ -1,8 +1,12 @@
-//
-// Created by wumch on 16-1-26.
-//
 
-#ifndef TABOO_PREDEF_HPP
-#define TABOO_PREDEF_HPP
+#pragma once
 
-#endif //TABOO_PREDEF_HPP
+#include "stage/meta.hpp"
+
+namespace taboo
+{
+
+typedef uint8_t nval_t;
+typedef uint32_t id_t;
+
+}
