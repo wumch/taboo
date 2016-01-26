@@ -1,0 +1,6 @@
+[submodule "libs/rapidjson"]
+	path = libs/rapidjson
+	url = git@github.com:wumch/rapidjson.git
+[submodule "libs/stage"]
+	path = libs/stage
+	url = git@github.com:wumch/stage.git
