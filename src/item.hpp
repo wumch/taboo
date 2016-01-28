@@ -20,6 +20,20 @@ public:
     Item(id_t _id):
         id(_id)
     {}
+
+    Item():
+        id(0)
+    {}
+
+    bool operator!() const
+    {
+        return id;
+    }
 };
+
+inline bool operator==(const Item& lhs, const Item& rhs)
+{
+    return lhs.id == rhs.id;
+}
 
 }

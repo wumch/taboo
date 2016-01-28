@@ -18,7 +18,8 @@ void test_trie()
     typedef cedar::da<int32_t, -1, -2, false> Trie;
     Trie trie;
     trie.update("abcdefg", 7, 10086);
-    trie.update("abcdefg", 7, 11111);
+    CS_DUMP(trie.update("abcdefg", 7));
+    CS_DUMP(trie.update("abcdefg", 7, 11111));
     trie.update("abcde", 5, 10087);
     trie.update("abcdefghj", 9, 10088);
     trie.update("abcde76", 7, 10089);
