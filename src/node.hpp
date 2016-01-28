@@ -84,6 +84,26 @@ private:
             return left->value < right->value;
         }
     };
+
+    Children::iterator lower_bound(const Children::iterator begin, const Children::iterator end, nval_t val) const
+    {
+        Children::iterator left = begin, middle;
+        int first = 0, middle;
+        int half, len;
+        len = size;
+
+        while(len > 0) {
+            half = len >> 1;
+            middle = first + half;
+            if(array[middle] < key) {
+                first = middle + 1;
+                len = len-half-1;       //在右边子序列中查找
+            }
+            else
+                len = half;            //在左边子序列（包含middle）中查找
+        }
+        return first;
+    }
 };
 
 }

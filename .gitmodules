@@ -4,3 +4,6 @@
 [submodule "libs/stage"]
 	path = libs/stage
 	url = git@github.com:wumch/stage.git
+[submodule "libs/websocketpp"]
+	path = libs/websocketpp
+	url = git@github.com:wumch/websocketpp.git
