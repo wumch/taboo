@@ -2,15 +2,6 @@
 #pragma once
 
 #include "predef.hpp"
-#include <list>
-typedef std::list<Item> ItemList;
-#if __cplusplus < 201103L
-#   include <boost/unordered_map.hpp>
-    typedef boost::unordered_map<id_t, ItemList> ItemMap;
-#else
-#   include <unordered_map>
-    typedef std::unordered_map<id_t, ItemList> ItemMap;
-#endif
 #include "item.hpp"
 
 namespace taboo
@@ -19,17 +10,21 @@ namespace taboo
 class Farm
 {
 private:
-    ItemMap map;
+    ItemMap& items;
     const ItemList empty_items;
     const Item dummy_item;
 
 public:
+    explicit Farm(ItemMap& _items):
+        items(_items)
+    {}
+
     void attach(const Item& item)
     {
-        ItemMap::iterator it = map.find(item.id);
-        if (it == map.end())
+        ItemMap::iterator it = items.find(item.id);
+        if (it == items.end())
         {
-            it = map.insert(std::make_pair(item.id, empty_items));
+            it = items.insert(std::make_pair(item.id, empty_items));
         }
         ItemList::iterator pos = std::find(it->second.begin(), it->second.end(), item);
         if (pos == it->second.end())
@@ -40,8 +35,8 @@ public:
 
     bool detach(const Item& item)
     {
-        ItemMap::iterator it = map.find(item.id);
-        if (it != map.end())
+        ItemMap::iterator it = items.find(item.id);
+        if (it != items.end())
         {
             ItemList::iterator pos = std::find(it->second.begin(), it->second.end(), item);
             if (pos != it->second.end())
@@ -53,16 +48,16 @@ public:
         return false;
     }
 
-    const ItemList& items(id_t id) const
+    const ItemList& get_items(id_t id) const
     {
-        ItemMap::iterator it = map.find(item.id);
-        return it == map.end() ? empty_items : it->second;
+        ItemMap::iterator it = items.find(item.id);
+        return it == items.end() ? empty_items : it->second;
     }
 
     const Item& item(id_t id) const
     {
-        ItemMap::iterator it = map.find(item.id);
-        if (it != map.end())
+        ItemMap::iterator it = items.find(item.id);
+        if (it != items.end())
         {
             for (ItemList::iterator i = it->second.begin(); i != it->second.end(); ++i)
             {

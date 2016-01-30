@@ -4,9 +4,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "cedar/cedar.h"
-#include "item.hpp"
-#include "farm.hpp"
+#include "aside.hpp"
 
 namespace taboo
 {
@@ -18,17 +16,16 @@ typedef std::vector<const Item*> ItemPtrList;
 class Seeker
 {
 private:
-    enum {
-        no_value = -1,
-        no_path  = -2,
-    };
-    typedef cedar::da<id_t,no_value, no_path, false> Trie;
+    Trie& trie;
 
-    Trie trie;
-
-    Farm farm;
+    Farm& farm;
 
 public:
+    Seeker():
+        trie(Aside::instance()->trie),
+        farm(Aside::instance()->farm)
+    {}
+
     void attach(const KeyList& keys, const Item& item)
     {
         for (KeyList::const_iterator it = keys.begin(); it != keys.end(); ++it)
