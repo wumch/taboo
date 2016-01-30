@@ -2,6 +2,7 @@
 #pragma once
 
 #include "predef.hpp"
+#include <boost/unordered_map.hpp>
 #include "item.hpp"
 
 namespace taboo
@@ -10,61 +11,64 @@ namespace taboo
 class Farm
 {
 private:
-    ItemMap& items;
-    const ItemList empty_items;
+    ItemSlotMap& slots;
+    const ItemSlot empty_slot;
     const Item dummy_item;
 
 public:
-    explicit Farm(ItemMap& _items):
-        items(_items)
+    explicit Farm(ItemSlotMap& item_slots):
+        slots(item_slots)
     {}
 
     void attach(const Item& item)
     {
-        ItemMap::iterator it = items.find(item.id);
-        if (it == items.end())
+        ItemSlotMap::iterator it = slots.find(item.id);
+        if (it == slots.end())
         {
-            it = items.insert(std::make_pair(item.id, empty_items));
+            it = slots.insert(std::make_pair(item.id, empty_slot));
         }
-        ItemList::iterator pos = std::find(it->second.begin(), it->second.end(), item);
+        ItemSlot::iterator pos = std::find(it->second.begin(), it->second.end(), item);
         if (pos == it->second.end())
         {
-            it->second.push_back(item);
+            it->second.insert(std::make_pair(item.id, item));
         }
     }
 
     bool detach(const Item& item)
     {
-        ItemMap::iterator it = items.find(item.id);
-        if (it != items.end())
+        ItemSlotMap::iterator it = slots.find(item.id);
+        if (it != slots.end())
         {
-            ItemList::iterator pos = std::find(it->second.begin(), it->second.end(), item);
+            ItemSlot::iterator pos = std::find(it->second.begin(), it->second.end(), item);
             if (pos != it->second.end())
             {
                 it->second.erase(pos);
+                if (it->second.empty())
+                {
+                    slots.erase(it);
+                }
                 return true;
             }
         }
         return false;
     }
 
-    const ItemList& get_items(id_t id) const
+    const ItemSlot& slot(id_t id) const
     {
-        ItemMap::iterator it = items.find(item.id);
-        return it == items.end() ? empty_items : it->second;
+        // todo: 加读锁
+        ItemSlotMap::iterator it = slots.find(id);
+        return it == slots.end() ? empty_slot : it->second;
     }
 
     const Item& item(id_t id) const
     {
-        ItemMap::iterator it = items.find(item.id);
-        if (it != items.end())
+        ItemSlotMap::iterator it = slots.find(id);
+        if (it != slots.end())
         {
-            for (ItemList::iterator i = it->second.begin(); i != it->second.end(); ++i)
+            ItemSlot::const_iterator pos = it->second.find(id);
+            if (pos != it->second.end())
             {
-                if (i->id == id)
-                {
-                    return i;
-                }
+                return *pos;
             }
         }
         return item;

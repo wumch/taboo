@@ -2,10 +2,11 @@
 #pragma once
 
 #include "predef.hpp"
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <list>
-#include <algorithm>
+#include <boost/unordered_map.hpp>
 #include "attr.hpp"
 
 namespace taboo
@@ -29,7 +30,7 @@ public:
 
     bool operator!() const
     {
-        return !!id;
+        return id;
     }
 };
 
@@ -38,13 +39,8 @@ inline bool operator==(const Item& lhs, const Item& rhs)
     return lhs.id == rhs.id;
 }
 
-typedef std::list<Item> ItemList;
-#if __cplusplus < 201103L
-#   include <boost/unordered_map.hpp>
-    typedef boost::unordered_map<id_t, ItemList> ItemMap;
-#else
-#   include <unordered_map>
-    typedef std::unordered_map<id_t, ItemList> ItemMap;
-#endif
+#include <unordered_map>
+typedef boost::unordered_map<id_t, Item, int> ItemSlot;
+typedef boost::unordered_map<id_t, ItemSlot, int> ItemSlotMap;
 
 }
