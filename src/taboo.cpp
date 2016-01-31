@@ -13,6 +13,9 @@ curl -vvv http://localhost:9002     \
 #include "Keeper.hpp"
 #include "Seeker.hpp"
 
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+
 typedef websocketpp::server<websocketpp::config::asio> server;
 
 namespace taboo
@@ -35,6 +38,19 @@ void test_trie()
         keys.push_back("abdef白入定");
         ItemPtr item = make_item("{\"id\":10087,\"name\":\"入定\"}");
         keeper.attach(keys, item);
+
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        CS_DUMP(writer.StartObject());
+        CS_DUMP(buffer.GetString());
+        CS_DUMP(writer.Key("staff_id"));
+        CS_DUMP(buffer.GetString());
+        CS_DUMP(writer.Uint(10010));
+        CS_DUMP(buffer.GetString());
+        CS_DUMP(writer.Key("data"));
+        CS_DUMP(buffer.GetString());
+        CS_DUMP(item->doc.Accept(writer));
+        CS_DUMP(buffer.GetString());
     }
 
     Seeker seeker;
