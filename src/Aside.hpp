@@ -1,20 +1,18 @@
 
 #pragma once
 
+#include "Farm.hpp"
 #include "predef.hpp"
-#include "cedar/cedar.h"
-#include "item.hpp"
-#include "farm.hpp"
+#include "Item.hpp"
+#include "Trie.hpp"
 
 namespace taboo
 {
 
-typedef cedar::da<id_t,no_value, no_path, false> Trie;
-
 class Aside
 {
 public:
-    ItemMap items;
+    SlotMap slots;
 
     Farm farm;
 
@@ -29,7 +27,7 @@ private:
     static Aside _instance;
 
     Aside():
-        farm(items)
+        farm(slots)
     {}
 };
 

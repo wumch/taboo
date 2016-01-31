@@ -9,28 +9,41 @@ curl -vvv http://localhost:9002     \
 #include <iostream>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
-#include "cedar/cedar.h"
+#include "Config.hpp"
+#include "Keeper.hpp"
+#include "Seeker.hpp"
 
 typedef websocketpp::server<websocketpp::config::asio> server;
 
+namespace taboo
+{
 void test_trie()
 {
-    typedef cedar::da<int32_t, -1, -2, false> Trie;
-    Trie trie;
-    trie.update("abcdefg", 7, 10086);
-    CS_DUMP(trie.update("abcdefg", 7));
-    CS_DUMP(trie.update("abcdefg", 7, 11111));
-    trie.update("abcde", 5, 10087);
-    trie.update("abcdefghj", 9, 10088);
-    trie.update("abcde76", 7, 10089);
+    Keeper keeper;
+    {
+        KeyList keys;
+        keys.push_back("abcdefg");
+        keys.push_back("abcdefghi");
+        keys.push_back("abdef");
+        ItemPtr item = make_item("{\"id\":10086,\"name\":\"wumch\"}");
+        keeper.attach(keys, item);
+    }
+    {
+        KeyList keys;
+        keys.push_back("abcdrg");
+        keys.push_back("abcdef454i");
+        keys.push_back("abdef白入定");
+        ItemPtr item = make_item("{\"id\":10087,\"name\":\"入定\"}");
+        keeper.attach(keys, item);
+    }
 
-    int32_t res[8];
-    size_t len = trie.commonPrefixPredict("abc", res, 5);
-    CS_DUMP(len);
-    CS_DUMP(res[0]);
-    CS_DUMP(res[1]);
-    CS_DUMP(res[2]);
-    CS_DUMP(res[3]);
+    Seeker seeker;
+    const ItemPtrSet& items = seeker.seek("abc", 10);
+    for (ItemPtrSet::const_iterator it = items.begin(); it != items.end(); ++it) {
+        CS_DUMP((*it)->id);
+        CS_DUMP((*it)->doc["name"].GetString());
+    }
+}
 }
 
 void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
@@ -38,11 +51,13 @@ void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
     std::cout << msg->get_payload() << std::endl;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    CS_SAY("building trie");
-    test_trie();
-    CS_SAY("build_trie done");
+    taboo::Config::mutableInstance()->init(argc, argv);
+
+    CS_SAY("testing trie");
+    taboo::test_trie();
+    CS_SAY("test trie done");
     return 0;
 
     server print_server;

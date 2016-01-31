@@ -184,7 +184,10 @@ namespace cedar {
 #else
       const int to = _follow (from, 0, cf);
 #endif
-      return _array[to].value += val;
+      if (_array[to].value == 0 || val < _array[to].value) {
+          _array[to].value = val;
+      }
+      return _array[to].value;
     }
     // easy-going erase () without compression
     int erase (const char* key) { return erase (key, std::strlen (key)); }
@@ -316,7 +319,7 @@ namespace cedar {
       _no_delete = false;
     }
     // return the first child for a tree rooted by a given node
-    int begin (size_t& from, size_t& len) {
+    int begin (size_t& from, size_t& len) const {
 #ifndef USE_FAST_LOAD
       if (! _ninfo) _restore_ninfo ();
 #endif
@@ -334,7 +337,7 @@ namespace cedar {
       return _array[_array[from].base () ^ c].base_;
     }
     // return the next child if any
-    int next (size_t& from, size_t& len, const size_t root = 0) {
+    int next (size_t& from, size_t& len, const size_t root = 0) const {
       uchar c = 0;
 #ifdef USE_REDUCED_TRIE
       if (_array[from].value < 0)
