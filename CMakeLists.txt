@@ -4,8 +4,8 @@ project(taboo)
 
 include_directories(./libs ./libs/websocketpp ./libs/rapidjson/include)
 
-set(SOURCE_FILES src/taboo.cpp src/Aside.cpp src/Config.cpp
-    src/Seeker.hpp src/Aside.hpp src/Farm.hpp src/Trie.hpp src/Item.hpp src/Config.hpp src/predef.hpp)
+set(SOURCE_FILES src/taboo.cpp src/Aside.cpp src/Filter.cpp src/Config.cpp
+    src/Seeker.hpp src/Aside.hpp src/Farm.hpp src/Trie.hpp src/Filter.hpp src/Item.hpp src/Config.hpp src/predef.hpp)
 
 set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -ferror-limit=5)

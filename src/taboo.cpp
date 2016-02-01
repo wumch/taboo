@@ -30,6 +30,9 @@ void test_trie()
         keys.push_back("abdef");
         ItemPtr item = make_item("{\"id\":10086,\"name\":\"wumch\"}");
         keeper.attach(keys, item);
+
+        rapidjson::Value attr("name", 4);
+        CS_DUMP(item->doc.FindMember(attr)->value.GetString());
     }
     {
         KeyList keys;
