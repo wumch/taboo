@@ -7,9 +7,11 @@ curl -vvv http://localhost:9002     \
 
 #include "predef.hpp"
 #include <iostream>
+#include <glog/logging.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 #include "Config.hpp"
+#include "Aside.hpp"
 #include "Keeper.hpp"
 #include "Seeker.hpp"
 
@@ -28,7 +30,7 @@ void test_trie()
         keys.push_back("abcdefg");
         keys.push_back("abcdefghi");
         keys.push_back("abdef");
-        ItemPtr item = make_item("{\"id\":10086,\"name\":\"wumch\"}");
+        ItemPtr item = makeItem("{\"id\":10086,\"name\":\"wumch\"}");
         keeper.attach(keys, item);
 
         rapidjson::Value attr("name", 4);
@@ -39,7 +41,7 @@ void test_trie()
         keys.push_back("abcdrg");
         keys.push_back("abcdef454i");
         keys.push_back("abdef白入定");
-        ItemPtr item = make_item("{\"id\":10087,\"name\":\"入定\"}");
+        ItemPtr item = makeItem("{\"id\":10087,\"name\":\"入定\"}");
         keeper.attach(keys, item);
 
         rapidjson::StringBuffer buffer;
@@ -72,7 +74,9 @@ void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
 
 int main(int argc, char* argv[])
 {
+    google::InitGoogleLogging(argv[0]);
     taboo::Config::mutableInstance()->init(argc, argv);
+    taboo::Aside::initialize();
 
     CS_SAY("testing trie");
     taboo::test_trie();

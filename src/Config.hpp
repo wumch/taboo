@@ -6,7 +6,6 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/thread/mutex.hpp>
 
 extern int main(int, char*[]);
 
@@ -44,30 +43,28 @@ public:
     std::string programName;
     boost::filesystem::path pidFile;
     std::size_t workerCount;
-    std::size_t ioThreads;
     std::size_t stackSize;
     bool memlock;
     std::size_t maxOpenFiles;
 
     bool reuseAddress;
-    std::size_t maxConnections;
+    std::size_t maxManagerConnections;
+    std::size_t maxWsConnections;
     std::size_t backlog;
     bool tcpNodelay;
 
-    std::size_t ioServiceNum;
     boost::asio::ip::address host;
     uint16_t port;
 
-    std::size_t max_matches, default_matches;
+    std::time_t managerRecvTimeout, managerSendTimeout,
+        wsRecvTimeout, wsSendTimeout;
+    std::time_t connectionMaxIdle, connectionCheckInterval;
 
-    std::time_t dsRecvTimeout, dsSendTimeout,
-        usRecvTimeout, usSendTimeout;
+    std::size_t maxIterations;
+    std::size_t maxMatches, defaultMatches;
 
-    std::size_t initBufferSize;     // 认证前 buffer-size。
-
-    bool multiThreads, multiIoThreads;
-    mutable boost::mutex workMutex, ioMutex;
-
+    std::string idKey;
+    std::size_t itemsAllocStep, maxItems;
 
     boost::program_options::variables_map options;
     boost::program_options::options_description desc;

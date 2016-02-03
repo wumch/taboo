@@ -4,6 +4,6 @@
 namespace taboo
 {
 
-Aside Aside::_instance;
+Aside* Aside::_instance = NULL;
 
 }

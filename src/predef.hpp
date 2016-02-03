@@ -4,6 +4,7 @@
 #include "stage/meta.hpp"
 #include <string>
 #include <list>
+#include <glog/logging.h>
 
 namespace taboo
 {

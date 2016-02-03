@@ -12,8 +12,6 @@
 namespace taboo
 {
 
-typedef rapidjson::Value Value;
-
 class BaseFilter
 {
 protected:

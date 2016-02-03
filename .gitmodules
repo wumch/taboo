@@ -7,3 +7,6 @@
 [submodule "libs/websocketpp"]
 	path = libs/websocketpp
 	url = git@github.com:wumch/websocketpp.git
+[submodule "libs/glog"]
+	path = libs/glog
+	url = git@github.com:google/glog.git

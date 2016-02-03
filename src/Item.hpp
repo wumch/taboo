@@ -6,10 +6,14 @@
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/functional/hash.hpp>
+#include <glog/logging.h>
 #include "rapidjson/document.h"
+#include "stage/misc.hpp"
 
 namespace taboo
 {
+
+typedef rapidjson::Value Value;
 
 class Item
 {
@@ -52,15 +56,7 @@ public:
     }
 };
 
-inline ItemPtr make_item(const char* str)
-{
-    ItemPtr item(new Item);
-    item->doc.Parse(str);
-    if (CS_BLIKELY(!item->doc.HasParseError() || item->doc.HasMember("id"))) {
-        item->id = item->doc["id"].GetUint();
-    }
-    return item;
-}
+extern ItemPtr makeItem(const char* str);
 
 typedef boost::unordered_set<ItemPtr, ItemPtrHasher> ItemPtrSet;
 typedef boost::unordered_map<id_t, ItemPtr> Slot;

@@ -81,11 +81,11 @@ void Config::initDesc()
         ("worker-count", boost::program_options::value<std::size_t>()->default_value(stage::getCpuNum() - 1),
             "num of worker processed, default is num of CPUs minus 1.")
 
-        ("io-threads", boost::program_options::value<std::size_t>()->default_value(1),
-            "num of io threads, default 1.")
+        ("max-manage-connections", boost::program_options::value<std::size_t>()->default_value(10000),
+            "max data manage connections, default 10000.")
 
-        ("max-connections", boost::program_options::value<std::size_t>()->default_value(100000),
-            "max in and out coming connections, default 100000.")
+        ("max-ws-connections", boost::program_options::value<std::size_t>()->default_value(100000),
+            "max websocket connections, including ws and wss connections, default 100000.")
 
         ("listen-backlog", boost::program_options::value<std::size_t>()->default_value(1024),
             "listen backlog, default 1024.")
@@ -93,26 +93,41 @@ void Config::initDesc()
         ("max-open-files", boost::program_options::value<std::size_t>()->default_value(stage::getRlimitCur(RLIMIT_NOFILE)),
             "max open files, default not set.")
 
-        ("downstream-receive-timeout", boost::program_options::value<std::time_t>()->default_value(30),
-            "timeout for receive from downstream (in second), 0 stands for never timeout, default 30s.")
+        ("manager-receive-timeout", boost::program_options::value<std::time_t>()->default_value(30),
+            "timeout for receive from manage connections (second), 0 stands for never timeout, default 30s.")
 
-        ("downstream-send-timeout", boost::program_options::value<std::time_t>()->default_value(30),
-            "timeout for send to downstream (in second), 0 stands for never timeout, default 30s.")
+        ("manager-send-timeout", boost::program_options::value<std::time_t>()->default_value(30),
+            "timeout for send to manage connections (second), 0 stands for never timeout, default 30s.")
 
-        ("upstream-receive-timeout", boost::program_options::value<std::time_t>()->default_value(30),
-            "timeout for receive from uptream (in second), 0 stands for never timeout, default 30s.")
+        ("ws-receive-timeout", boost::program_options::value<std::time_t>()->default_value(30),
+            "timeout for receive from websocket connections (second), 0 stands for never timeout, default 30s.")
 
-        ("upstream-send-timeout", boost::program_options::value<std::time_t>()->default_value(30),
-            "timeout for send to uptream (in second), 0 stands for never timeout, default 30s.")
+        ("ws-send-timeout", boost::program_options::value<std::time_t>()->default_value(30),
+            "timeout for send to websocket connections (second), 0 stands for never timeout, default 30s.")
 
-        ("initial-buffer-size", boost::program_options::value<std::size_t>()->default_value((2)),
-            "size of send buffer (KB), default is 2KB.")
+        ("connection-max-idle", boost::program_options::value<std::time_t>()->default_value((7200)),
+            "max idle time for each connection (second), default is 7200.")
+
+        ("connection-check-interval", boost::program_options::value<std::time_t>()->default_value((600)),
+            "connection idle time check interval (second), default is 600.")
+
+        ("max-iterations", boost::program_options::value<std::size_t>()->default_value((3000)),
+            "max iterations for each matching, default is 3000.")
 
         ("max-matches", boost::program_options::value<std::size_t>()->default_value((100)),
             "max match count to repsonse, default is 100.")
 
         ("default-matches", boost::program_options::value<std::size_t>()->default_value((10)),
             "default match count to repsonse, default is 10.")
+
+        ("items-allocate-step", boost::program_options::value<std::size_t>()->default_value((10 << 10)),
+            "count of items to allocate for each increment, default is 10240.")
+
+        ("max-items", boost::program_options::value<std::size_t>()->default_value((0)),
+            "max count of items, 0 for unlimited, default is 0.")
+
+        ("id-key", boost::program_options::value<std::string>()->default_value(("id")),
+            "key name of id field for items, default is 'id'.")
     ;
 }
 
@@ -136,23 +151,26 @@ void Config::load(boost::filesystem::path file)
     memlock = options["memlock"].as<bool>();
     stackSize = options["stack-size"].as<std::size_t>() << 10;
     workerCount = options["worker-count"].as<std::size_t>();
-    ioThreads = options["io-threads"].as<std::size_t>();
-    maxConnections = options["max-connections"].as<std::size_t>();
+    maxManagerConnections = options["max-manage-connections"].as<std::size_t>();
+    maxWsConnections = options["max-ws-connections"].as<std::size_t>();
     backlog = options["listen-backlog"].as<std::size_t>();
     maxOpenFiles = options["max-open-files"].as<std::size_t>();
 
-    initBufferSize = options["initial-buffer-size"].as<std::size_t>() << 10;
+    wsRecvTimeout = options["ws-receive-timeout"].as<std::time_t>();
+    wsSendTimeout = options["ws-send-timeout"].as<std::time_t>();
+    managerRecvTimeout = options["manager-receive-timeout"].as<std::time_t>();
+    managerSendTimeout = options["manager-send-timeout"].as<std::time_t>();
 
-    dsRecvTimeout = options["downstream-receive-timeout"].as<std::time_t>();
-    dsSendTimeout = options["downstream-send-timeout"].as<std::time_t>();
-    usRecvTimeout = options["upstream-receive-timeout"].as<std::time_t>();
-    usSendTimeout = options["upstream-send-timeout"].as<std::time_t>();
+    connectionMaxIdle = options["connection-max-idle"].as<std::time_t>();
+    connectionCheckInterval = options["connection-check-interval"].as<std::time_t>();
 
-    max_matches = options["max-matches"].as<std::size_t>();
-    default_matches = options["default-matches"].as<std::size_t>();
+    maxIterations = options["max-iterations"].as<std::size_t>();
+    maxMatches = options["max-matches"].as<std::size_t>();
+    defaultMatches = options["default-matches"].as<std::size_t>();
 
-    multiThreads = workerCount > 1;
-    multiIoThreads = ioThreads > 1;
+    idKey = options["id-key"].as<std::string>();
+    itemsAllocStep = options["items-allocate-step"].as<std::size_t>();
+    maxItems = options["max-items"].as<std::size_t>();
 
     CS_SAY(
         "loaded configs in [" << file.string() << "]:" << std::endl
@@ -161,20 +179,29 @@ void Config::load(boost::filesystem::path file)
         _CSOCKS_OUT_CONFIG_PROPERTY(port)
         _CSOCKS_OUT_CONFIG_PROPERTY(pidFile)
         _CSOCKS_OUT_CONFIG_PROPERTY(workerCount)
-        _CSOCKS_OUT_CONFIG_PROPERTY(ioThreads)
         _CSOCKS_OUT_CONFIG_PROPERTY(stackSize)
         _CSOCKS_OUT_CONFIG_PROPERTY(memlock)
         _CSOCKS_OUT_CONFIG_PROPERTY(maxOpenFiles)
         _CSOCKS_OUT_CONFIG_PROPERTY(reuseAddress)
-        _CSOCKS_OUT_CONFIG_PROPERTY(maxConnections)
         _CSOCKS_OUT_CONFIG_PROPERTY(backlog)
         _CSOCKS_OUT_CONFIG_PROPERTY(tcpNodelay)
-        _CSOCKS_OUT_CONFIG_PROPERTY(ioServiceNum)
-        _CSOCKS_OUT_CONFIG_PROPERTY(dsRecvTimeout)
-        _CSOCKS_OUT_CONFIG_PROPERTY(dsSendTimeout)
-        _CSOCKS_OUT_CONFIG_PROPERTY(usRecvTimeout)
-        _CSOCKS_OUT_CONFIG_PROPERTY(usSendTimeout)
-        _CSOCKS_OUT_CONFIG_PROPERTY(initBufferSize)
+        _CSOCKS_OUT_CONFIG_PROPERTY(maxManagerConnections)
+        _CSOCKS_OUT_CONFIG_PROPERTY(maxWsConnections)
+
+        _CSOCKS_OUT_CONFIG_PROPERTY(wsRecvTimeout)
+        _CSOCKS_OUT_CONFIG_PROPERTY(wsSendTimeout)
+        _CSOCKS_OUT_CONFIG_PROPERTY(managerRecvTimeout)
+        _CSOCKS_OUT_CONFIG_PROPERTY(managerSendTimeout)
+        _CSOCKS_OUT_CONFIG_PROPERTY(connectionMaxIdle)
+        _CSOCKS_OUT_CONFIG_PROPERTY(connectionCheckInterval)
+
+        _CSOCKS_OUT_CONFIG_PROPERTY(maxIterations)
+        _CSOCKS_OUT_CONFIG_PROPERTY(maxMatches)
+        _CSOCKS_OUT_CONFIG_PROPERTY(defaultMatches)
+
+        _CSOCKS_OUT_CONFIG_PROPERTY(idKey)
+        _CSOCKS_OUT_CONFIG_PROPERTY(itemsAllocStep)
+        _CSOCKS_OUT_CONFIG_PROPERTY(maxItems)
     );
 }
 

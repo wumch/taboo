@@ -2,11 +2,7 @@
 #pragma once
 
 #include "predef.hpp"
-#include <string>
-#include <vector>
-#include <set>
 #include <algorithm>
-#include <boost/unordered_set.hpp>
 #include "Aside.hpp"
 #include "Config.hpp"
 #include "Farm.hpp"
@@ -31,7 +27,7 @@ public:
     Seeker():
         trie(Aside::instance()->trie),
         farm(Aside::instance()->farm),
-        max_num(Config::instance()->max_matches)
+        max_num(Config::instance()->maxMatches)
     {
         items.reserve(max_num);
     }
@@ -45,7 +41,7 @@ public:
     void match(const std::string& key, std::size_t num) const
     {
         items.clear();
-        CS_RETURN_IF(key.empty() || max_num < 1);
+        CS_RETURN_IF(key.empty() || num < 1);
         ItemCallback cb(farm, items, num);
         trie.traverse(key, cb);
     }
@@ -57,19 +53,20 @@ private:
         const Farm& _farm;
         ItemPtrSet& _items;
         const std::size_t _max_num;
+        std::size_t iterations;
 
     public:
         ItemCallback(const Farm& __farm, ItemPtrSet& __items, std::size_t __max_num):
-            _farm(__farm), _items(__items), _max_num(__max_num)
+            _farm(__farm), _items(__items), _max_num(__max_num), iterations(0)
         {}
 
         bool operator()(id_t id)
         {
-            return push_id(id);
+            return CS_BUNLIKELY(Config::instance()->maxIterations < ++iterations) ? false : push_one(id);
         }
 
     private:
-        bool push_id(id_t id)
+        bool push_one(id_t id)
         {
             const Slot& slot = _farm.slot(id);
             if (!slot.empty()) {
