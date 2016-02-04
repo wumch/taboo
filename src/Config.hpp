@@ -30,6 +30,10 @@ private:
 
     void load(const boost::filesystem::path& file);
 
+    void loadValues(const boost::filesystem::path& file);
+
+    template<typename IntType> IntType toInteger(const std::string& str) const;
+
     boost::program_options::variables_map options;
     boost::program_options::options_description desc;
 
@@ -48,7 +52,7 @@ public:
     boost::asio::ip::address manageHost, queryHost;
     uint16_t managePort, queryPort;
 
-    std::size_t manageWorkers, queryWorkers;
+    uint32_t manageWorkers, queryWorkers;
 
     std::size_t stackSize;
     bool memlock;
