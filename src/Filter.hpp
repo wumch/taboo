@@ -6,7 +6,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/unordered_set.hpp>
 #include "rapidjson/document.h"
 #include "Item.hpp"
 
@@ -88,8 +87,8 @@ public:
 
     virtual bool _apply(const ItemPtr& item) const
     {
-        rapidjson::Document::ConstMemberIterator it = item->doc.FindMember(attr);
-        return (it == item->doc.MemberEnd()) ? false : (it->value == value);
+        rapidjson::Document::ConstMemberIterator it = item->dom.FindMember(attr);
+        return (it == item->dom.MemberEnd()) ? false : (it->value == value);
     }
 
     static boost::shared_ptr<EqualFilter> create(const Value& _attr, const Value& _value)
@@ -111,8 +110,8 @@ public:
 
     virtual bool _apply(const ItemPtr& item) const
     {
-        rapidjson::Document::ConstMemberIterator it = item->doc.FindMember(attr);
-        return (it == item->doc.MemberEnd()) ? true : (it->value != value);
+        rapidjson::Document::ConstMemberIterator it = item->dom.FindMember(attr);
+        return (it == item->dom.MemberEnd()) ? true : (it->value != value);
     }
 
     static boost::shared_ptr<UnequalFilter> create(const Value& _attr, const Value& _value)
@@ -121,20 +120,10 @@ public:
     }
 };
 
-class ValueHasher
-{
-public:
-    int operator()(const Value* value) const
-    {
-        return boost::hash<std::string>()(value->GetString());
-    }
-};
-
 class InFilter:
     public BaseFilter
 {
 protected:
-    typedef boost::unordered_set<const Value*, ValueHasher> ValueSet;
     ValueSet values;
 
 public:
@@ -146,8 +135,8 @@ public:
 
     virtual bool _apply(const ItemPtr& item) const
     {
-        Value::MemberIterator it = item->doc.FindMember(attr);
-        if (it != item->doc.MemberEnd()) {
+        Value::MemberIterator it = item->dom.FindMember(attr);
+        if (it != item->dom.MemberEnd()) {
             return values.find(&it->value) != values.end();
         }
         return false;
@@ -201,8 +190,8 @@ public:
 
     virtual bool _apply(const ItemPtr& item) const
     {
-        Value::MemberIterator it = item->doc.FindMember(attr);
-        if (it != item->doc.MemberEnd()) {
+        Value::MemberIterator it = item->dom.FindMember(attr);
+        if (it != item->dom.MemberEnd()) {
             if (!min.IsNull() && it->value < min) {
                 return false;
             }
@@ -233,8 +222,8 @@ public:
 
     virtual bool _apply(const ItemPtr& item) const
     {
-        Value::MemberIterator it = item->doc.FindMember(attr);
-        if (it != item->doc.MemberEnd()) {
+        Value::MemberIterator it = item->dom.FindMember(attr);
+        if (it != item->dom.MemberEnd()) {
             // todo: implement
         }
         return false;

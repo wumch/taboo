@@ -175,7 +175,7 @@ void Config::load(const boost::filesystem::path& file)
     maxMatches = options["max-matches"].as<std::size_t>();
     defaultMatches = options["default-matches"].as<std::size_t>();
 
-    idKey = options["id-key"].as<std::string>();
+    keyId = options["id-key"].as<std::string>();
     itemsAllocStep = options["items-allocate-step"].as<std::size_t>();
     maxItems = options["max-items"].as<std::size_t>();
 
@@ -206,7 +206,7 @@ void Config::load(const boost::filesystem::path& file)
         _CSOCKS_OUT_CONFIG_PROPERTY(maxMatches)
         _CSOCKS_OUT_CONFIG_PROPERTY(defaultMatches)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(idKey)
+        _CSOCKS_OUT_CONFIG_PROPERTY(keyId)
         _CSOCKS_OUT_CONFIG_PROPERTY(itemsAllocStep)
         _CSOCKS_OUT_CONFIG_PROPERTY(maxItems)
     );

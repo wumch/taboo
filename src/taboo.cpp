@@ -32,7 +32,7 @@ void test_trie()
         keeper.attach(keys, item);
 
         rapidjson::Value attr("name", 4);
-        CS_DUMP(item->doc.FindMember(attr)->value.GetString());
+        CS_DUMP(item->dom.FindMember(attr)->value.GetString());
     }
     {
         KeyList keys;
@@ -52,7 +52,7 @@ void test_trie()
         CS_DUMP(buffer.GetString());
         CS_DUMP(writer.Key("data"));
         CS_DUMP(buffer.GetString());
-        CS_DUMP(item->doc.Accept(writer));
+        CS_DUMP(item->dom.Accept(writer));
         CS_DUMP(buffer.GetString());
     }
 
@@ -60,7 +60,7 @@ void test_trie()
     const ItemPtrSet& items = seeker.seek("abc", 10);
     for (ItemPtrSet::const_iterator it = items.begin(); it != items.end(); ++it) {
         CS_DUMP((*it)->id);
-        CS_DUMP((*it)->doc["name"].GetString());
+        CS_DUMP((*it)->dom["name"].GetString());
     }
 }
 

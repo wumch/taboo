@@ -11,10 +11,10 @@ ItemPtr makeItem(const char* str)
 {
 //    ItemPtr item(Aside::instance()->itemPool.malloc());
     ItemPtr item(new Item);
-    item->doc.Parse(str);
-    if (CS_BLIKELY(!item->doc.HasParseError())) {
-        Value::MemberIterator it = item->doc.FindMember(Aside::instance()->keyId);
-        if (CS_BLIKELY(it != item->doc.MemberEnd())) {
+    item->dom.Parse(str);
+    if (CS_BLIKELY(!item->dom.HasParseError())) {
+        Value::MemberIterator it = item->dom.FindMember(Aside::instance()->keyId);
+        if (CS_BLIKELY(it != item->dom.MemberEnd())) {
             if (CS_BLIKELY(it->value.IsUint())) {
                 item->id = it->value.GetUint();
             } else {
@@ -24,7 +24,7 @@ ItemPtr makeItem(const char* str)
             LOG_EVERY_N(ERROR, 10) << "'item' must have an 'id'." " (" << google::COUNTER << ")";
         }
     } else {
-        LOG(ERROR) << "error occured while parsing 'item': " << rapidjson::GetParseError_En(item->doc.GetParseError());
+        LOG(ERROR) << "error occured while parsing 'item': " << rapidjson::GetParseError_En(item->dom.GetParseError());
     }
     return item;
 }

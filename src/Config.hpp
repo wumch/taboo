@@ -62,8 +62,10 @@ public:
     std::size_t maxIterations;
     std::size_t maxMatches, defaultMatches;
 
-    std::string idKey;
+    std::string keyId, keyPrefix, KeyFilters, keyExcludes, keyFields;
     std::size_t itemsAllocStep, maxItems;
+
+    std::size_t prefixMinLen, prefixMaxLen;
 };
 
 }

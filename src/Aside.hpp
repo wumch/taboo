@@ -22,7 +22,7 @@ private:
 public:
     ItemPool itemPool;
 
-    const Value keyId;
+    const Value keyId, keyPrefix, keyFilters, keyExcludes, keyFields;
 
     SlotMap slots;
 
@@ -40,7 +40,7 @@ private:
 
     Aside():
         itemPool(Config::instance()->itemsAllocStep, Config::instance()->maxItems),
-        keyId(Config::instance()->idKey.data(), Config::instance()->idKey.length()),
+        keyId(Config::instance()->keyId.data(), Config::instance()->keyId.length()),
         farm(slots)
     {}
 
