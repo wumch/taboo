@@ -14,32 +14,31 @@ namespace taboo
 
 class Config
 {
-    friend int ::main(int, char*[]);
 private:
-    static Config _instance;
+    static Config* _instance;
 
     Config():
         desc("allowed config options")
     {}
 
-    void load(boost::filesystem::path file);
+    friend int ::main(int, char*[]);
+    static void initialize(int argc, char* argv[]);
 
-    static Config* mutableInstance()
-    {
-        return &_instance;
-    }
+    void init(int argc, char* argv[]);
 
     void initDesc();
+
+    void load(const boost::filesystem::path& file);
+
+    boost::program_options::variables_map options;
+    boost::program_options::options_description desc;
 
 public:
     static const Config* instance()
     {
-        return &_instance;
+        return _instance;
     }
 
-    void init(int argc, char* argv[]);
-
-public:
     std::string programName;
     boost::filesystem::path pidFile;
     std::size_t workerCount;
@@ -65,9 +64,6 @@ public:
 
     std::string idKey;
     std::size_t itemsAllocStep, maxItems;
-
-    boost::program_options::variables_map options;
-    boost::program_options::options_description desc;
 };
 
 }

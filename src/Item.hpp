@@ -36,12 +36,15 @@ public:
     }
 };
 
+typedef boost::shared_ptr<Item> ItemPtr;
+
+extern ItemPtr makeItem(const char* str);
+
 inline bool operator==(const Item& lhs, const Item& rhs)
 {
     return lhs.id == rhs.id;
 }
 
-typedef boost::shared_ptr<Item> ItemPtr;
 inline bool operator==(const ItemPtr& lhs, const ItemPtr& rhs)
 {
     return lhs->id == rhs->id;
@@ -55,8 +58,6 @@ public:
         return boost::hash<int>()(item->id);
     }
 };
-
-extern ItemPtr makeItem(const char* str);
 
 typedef boost::unordered_set<ItemPtr, ItemPtrHasher> ItemPtrSet;
 typedef boost::unordered_map<id_t, ItemPtr> Slot;

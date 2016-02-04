@@ -10,18 +10,16 @@ curl -vvv http://localhost:9002     \
 #include <glog/logging.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 #include "Config.hpp"
 #include "Aside.hpp"
 #include "Keeper.hpp"
 #include "Seeker.hpp"
 
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-
-typedef websocketpp::server<websocketpp::config::asio> server;
-
 namespace taboo
 {
+
 void test_trie()
 {
     Keeper keeper;
@@ -65,7 +63,10 @@ void test_trie()
         CS_DUMP((*it)->doc["name"].GetString());
     }
 }
+
 }
+
+typedef websocketpp::server<websocketpp::config::asio> server;
 
 void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
 {
@@ -75,7 +76,7 @@ void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
 int main(int argc, char* argv[])
 {
     google::InitGoogleLogging(argv[0]);
-    taboo::Config::mutableInstance()->init(argc, argv);
+    taboo::Config::initialize(argc, argv);
     taboo::Aside::initialize();
 
     CS_SAY("testing trie");

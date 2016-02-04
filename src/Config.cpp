@@ -11,6 +11,13 @@
 
 namespace taboo
 {
+
+void Config::initialize(int argc, char* argv[])
+{
+    _instance = new Config;
+    _instance->init(argc, argv);
+}
+
 void Config::init(int argc, char* argv[])
 {
     boost::filesystem::path programPath(argv[0]);
@@ -131,7 +138,7 @@ void Config::initDesc()
     ;
 }
 
-void Config::load(boost::filesystem::path file)
+void Config::load(const boost::filesystem::path& file)
 {
     try
     {
@@ -205,7 +212,7 @@ void Config::load(boost::filesystem::path file)
     );
 }
 
-Config Config::_instance;
+Config* Config::_instance = NULL;
 
 }
 

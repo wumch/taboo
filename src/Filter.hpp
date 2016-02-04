@@ -2,6 +2,7 @@
 #pragma once
 
 #include "predef.hpp"
+#include <cstring>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/functional/hash.hpp>
@@ -123,9 +124,9 @@ public:
 class ValueHasher
 {
 public:
-    int operator()(const Value& value) const
+    int operator()(const Value* value) const
     {
-        return boost::hash<std::string>()(value.GetString());
+        return boost::hash<std::string>()(value->GetString());
     }
 };
 
@@ -133,7 +134,7 @@ class InFilter:
     public BaseFilter
 {
 protected:
-    typedef boost::unordered_set<Value, ValueHasher> ValueSet;
+    typedef boost::unordered_set<const Value*, ValueHasher> ValueSet;
     ValueSet values;
 
 public:
@@ -147,7 +148,7 @@ public:
     {
         Value::MemberIterator it = item->doc.FindMember(attr);
         if (it != item->doc.MemberEnd()) {
-            return values.find(it->value) != values.end();
+            return values.find(&it->value) != values.end();
         }
         return false;
     }
@@ -167,10 +168,25 @@ protected:
     {
         for (rapidjson::Document::ConstMemberIterator it = _values.MemberBegin();
             it != _values.MemberEnd(); ++it) {
-//            values.insert(it->value);
+            values.insert(&it->value);
         }
     }
 };
+
+// todo: currently too much crude.
+inline bool operator<(const Value& lhs, const Value& rhs)
+{
+    if (lhs.GetType() == rhs.GetType()) {
+        if (lhs.IsInt()) {
+            return lhs.GetInt() < rhs.GetInt();
+        } else if (lhs.IsDouble()) {
+            return lhs.GetDouble() < rhs.GetDouble();
+        } else if (lhs.IsString()) {
+            return std::strcmp(lhs.GetString(), rhs.GetString()) < 0;
+        }
+    }
+    return false;
+}
 
 class RangeFilter:
     public BaseFilter
@@ -187,12 +203,12 @@ public:
     {
         Value::MemberIterator it = item->doc.FindMember(attr);
         if (it != item->doc.MemberEnd()) {
-//            if (!min.IsNull() && it->value < min) {
-//                return false;
-//            }
-//            if (!max.IsNull() && max < it->value) {
-//                return false;
-//            }
+            if (!min.IsNull() && it->value < min) {
+                return false;
+            }
+            if (!max.IsNull() && max < it->value) {
+                return false;
+            }
             return true;
         }
         return false;
