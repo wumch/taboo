@@ -13,47 +13,53 @@
 namespace taboo
 {
 
+class BaseFilter;
+typedef boost::shared_ptr<BaseFilter> FilterPtr;
+
 class BaseFilter
 {
 protected:
     const Value& attr;
-    const BaseFilter* next;
+    FilterPtr next;
 
 public:
     explicit BaseFilter(const Value& _attr):
-        attr(_attr), next(NULL)
+        attr(_attr)
     {}
 
     virtual bool apply(const ItemPtr& item) const
     {
-        return _apply(item) ? (has_next() ? next->apply(item) : true) : false;
+        return _apply(item) ? (hasNext() ? next->apply(item) : true): false;
     }
 
-    void attach(const BaseFilter* _next)
+    void attach(const FilterPtr& _next)
     {
         next = _next;
     }
 
     static bool validate(const Value& _value)
     {
-        return true;
+        return false;
+    }
+
+    FilterPtr& getNext()
+    {
+        return next;
     }
 
     virtual ~BaseFilter()
     {
-        delete next;
+        CS_SAY("destructing " << (uint64_t)this);
     }
 
 protected:
     virtual bool _apply(const ItemPtr& item) const = 0;
 
-    bool has_next() const
+    bool hasNext() const
     {
         return next;
     }
 };
-
-typedef boost::shared_ptr<BaseFilter> FilterPtr;
 
 
 template<bool applyRes>
@@ -65,65 +71,56 @@ public:
         BaseFilter(Value())
     {}
 
-    virtual bool _apply(const ItemPtr& item) const
-    {
-        return applyRes;
-    }
-
     static boost::shared_ptr<EmptyFilterImpl> create()
     {
         return boost::make_shared<EmptyFilterImpl>();
+    }
+
+protected:
+    virtual bool _apply(const ItemPtr& item) const
+    {
+        return applyRes;
     }
 };
 
 typedef EmptyFilterImpl<true> EmptyFilter;
 typedef EmptyFilterImpl<false> EmptyExcludeFilter;
 
-class EqualFilter:
+template<bool resOnEqual>
+class EqualFilterImpl:
     public BaseFilter
 {
 protected:
     const Value& value;
 
 public:
-    EqualFilter(const Value& _attr, const Value& _value):
+    EqualFilterImpl(const Value& _attr, const Value& _value):
         BaseFilter(_attr), value(_value)
-    {}
-
-    virtual bool _apply(const ItemPtr& item) const
     {
-        rapidjson::Document::ConstMemberIterator it = item->dom.FindMember(attr);
-        return (it == item->dom.MemberEnd()) ? false : (it->value == value);
+        CS_SAY("equal filter built");
     }
 
-    static boost::shared_ptr<EqualFilter> create(const Value& _attr, const Value& _value)
+    static boost::shared_ptr<EqualFilterImpl> create(const Value& _attr, const Value& _value)
     {
-        return boost::make_shared<EqualFilter>(_attr, _value);
+        return boost::make_shared<EqualFilterImpl>(_attr, _value);
     }
-};
 
-class UnequalFilter:
-    public BaseFilter
-{
+    static bool validate(const Value& _value)
+    {
+        return !_value.IsObject() && !_value.IsArray() && !_value.IsNull();
+    }
+
 protected:
-    const Value& value;
-
-public:
-    UnequalFilter(const Value& _attr, const Value& _value):
-        BaseFilter(_attr), value(_value)
-    {}
-
     virtual bool _apply(const ItemPtr& item) const
     {
         rapidjson::Document::ConstMemberIterator it = item->dom.FindMember(attr);
-        return (it == item->dom.MemberEnd()) ? true : (it->value != value);
-    }
-
-    static boost::shared_ptr<UnequalFilter> create(const Value& _attr, const Value& _value)
-    {
-        return boost::make_shared<UnequalFilter>(_attr, _value);
+        CS_DUMP(it->name.GetString());
+        return (it != item->dom.MemberEnd() && it->value == value) ? resOnEqual : !resOnEqual;
     }
 };
+
+typedef EqualFilterImpl<true> EqualFilter;
+typedef EqualFilterImpl<false> UnequalFilter;
 
 class InFilter:
     public BaseFilter
@@ -138,15 +135,6 @@ public:
         fill_values(_values);
     }
 
-    virtual bool _apply(const ItemPtr& item) const
-    {
-        Value::MemberIterator it = item->dom.FindMember(attr);
-        if (it != item->dom.MemberEnd()) {
-            return values.find(&it->value) != values.end();
-        }
-        return false;
-    }
-
     static boost::shared_ptr<InFilter> create(const Value& _attr, const Value& _values)
     {
         return boost::make_shared<InFilter>(_attr, _values);
@@ -158,11 +146,22 @@ public:
     }
 
 protected:
+    virtual bool _apply(const ItemPtr& item) const
+    {
+        CS_DUMP(attr.GetString());
+        Value::MemberIterator it = item->dom.FindMember(attr);
+        CS_DUMP(it->value.GetUint());
+        if (it != item->dom.MemberEnd()) {
+            return values.find(&it->value) != values.end();
+        }
+        return false;
+    }
+
     void fill_values(const Value& _values)
     {
-        for (rapidjson::Document::ConstMemberIterator it = _values.MemberBegin();
-            it != _values.MemberEnd(); ++it) {
-            values.insert(&it->value);
+        for (rapidjson::Document::ConstValueIterator it = _values.Begin();
+            it != _values.End(); ++it) {
+            values.insert(&*it);
         }
     }
 };
@@ -193,6 +192,17 @@ public:
         BaseFilter(_attr), min(_min), max(_max)
     {}
 
+    static bool validate(const Value& _value)
+    {
+        return _value.IsObject();   // todo: strict check
+    }
+
+    static boost::shared_ptr<RangeFilter> create(const Value& _attr, const Value& _min, const Value& _max)
+    {
+        return boost::make_shared<RangeFilter>(_attr, _min, _max);
+    }
+
+protected:
     virtual bool _apply(const ItemPtr& item) const
     {
         Value::MemberIterator it = item->dom.FindMember(attr);
@@ -207,11 +217,6 @@ public:
         }
         return false;
     }
-
-    static boost::shared_ptr<RangeFilter> create(const Value& _attr, const Value& _min, const Value& _max)
-    {
-        return boost::make_shared<RangeFilter>(_attr, _min, _max);
-    }
 };
 
 class AttrFilter:
@@ -225,6 +230,17 @@ public:
         BaseFilter(_attr), value(_value)
     {}
 
+    static bool validate(const Value& _value)
+    {
+        return _value.IsObject() && !_value.ObjectEmpty();
+    }
+
+    static boost::shared_ptr<AttrFilter> create(const Value& _attr, const Value& _value)
+    {
+        return boost::make_shared<AttrFilter>(_attr, _value);
+    }
+
+protected:
     virtual bool _apply(const ItemPtr& item) const
     {
         Value::MemberIterator it = item->dom.FindMember(attr);
@@ -235,69 +251,70 @@ public:
     }
 };
 
-
 // Filter responsibility chain
 class FilterChain
 {
 protected:
-    FilterPtr filter, exclude;
+    FilterPtr filter;
+    FilterPtr exclude;
 
 public:
     bool apply(const ItemPtr& item) const
     {
-        return !exclude->apply(item) && filter->apply(item);
+        return (!exclude || !exclude->apply(item)) &&
+            (!filter || filter->apply(item));
     }
 
-    static FilterChain build(const Query& query)
+    static bool rebuild(FilterChain& chain, const Query& query)
     {
-        FilterChain chain;
-        chain.filter = build<false>(query.filters);
-        chain.exclude = build<true>(query.excludes);
-        return chain;
+        rebuild(chain.filter, query.filters);
+        rebuild(chain.exclude, query.excludes);
+        return true;
     }
 
 private:
-    template<bool excluding>
-    static FilterPtr build(const Value* cond)
+    static void rebuild(FilterPtr& _filter, const Value* cond)
     {
-        FilterPtr _filter;
         if (cond == NULL) {
-            _filter = EmptyFilterImpl<!excluding>::create();
+            _filter.reset();
         } else if (cond->IsArray()) {
+            CS_DUMP("here");
             _filter = InFilter::create(Aside::instance()->keyId, *cond);
         } else if (cond->IsUint()) {
             _filter = EqualFilter::create(Aside::instance()->keyId, *cond);
-        } else {
-            _filter = byCond(cond);
+        } else if (cond->IsObject()) {
+            byCond(_filter, cond);
         }
-        return _filter;
     }
 
     // todo: too crude
-    static FilterPtr byCond(const Value* cond)
+    static void byCond(FilterPtr& _filter, const Value* cond)
     {
-        FilterPtr _filter(EmptyFilter::create());
+        BaseFilter* cursor = _filter.get();
         for (rapidjson::Document::ConstMemberIterator it = cond->MemberBegin();
             it != cond->MemberEnd(); ++it) {
             if (it->value.IsArray()) {
                 if (InFilter::validate(it->name, it->value)) {
-                    attach(_filter, InFilter::create(it->name, it->value));
+                    attach(_filter, cursor, InFilter::create(it->name, it->value));
                 }
+            } else if (it->value.IsObject()) {
+                CS_DUMP("attr filter is not implemented");
             } else {
                 if (EqualFilter::validate(it->value)) {
-                    attach(_filter, EqualFilter::create(it->name, it->value));
+                    attach(_filter, cursor, EqualFilter::create(it->name, it->value));
                 }
             }
         }
-        return _filter;
     }
 
-    static void attach(FilterPtr& _filter, const FilterPtr& next)
+    static void attach(FilterPtr& _filter, BaseFilter*& cursor, const FilterPtr& next)
     {
         if (!_filter) {
-            _filter.reset(next.get());
+            _filter = next;
+            cursor = _filter.get();
         } else {
-            _filter->attach(next.get());
+            cursor->attach(next);
+            cursor = cursor->getNext().get();
         }
     }
 };

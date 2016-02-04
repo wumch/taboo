@@ -36,6 +36,15 @@ public:
     }
 };
 
-typedef boost::unordered_set<const Value*, ValueHasher> ValueSet;
+class ValueEqualer
+{
+public:
+    bool operator()(const Value* lhs, const Value* rhs) const
+    {
+        return *lhs == *rhs;
+    }
+};
+
+typedef boost::unordered_set<const Value*, ValueHasher, ValueEqualer> ValueSet;
 
 }

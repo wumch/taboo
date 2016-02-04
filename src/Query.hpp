@@ -4,6 +4,7 @@
 #include "predef.hpp"
 #include <algorithm>
 #include <string>
+#include "rapidjson/error/en.h"
 #include "stage/math.hpp"
 #include "Aside.hpp"
 
@@ -28,11 +29,17 @@ public:
     {}
 
 public:
-    static bool fromStr(Query& query, const char* str)
+    static bool rebuild(Query& query, const char* str)
     {
-        query.body.Clear();
+        if (!query.body.IsNull()) {
+            query.body.SetNull();
+        }
         query.body.Parse(str);
-        if (query.body.HasParseError()) {
+        if (query.body.HasParseError() || !query.body.IsObject()) {
+            query.body.SetNull();
+            LOG_EVERY_N(ERROR, 10) << "failed on build query: "
+                << rapidjson::GetParseError_En(query.body.GetParseError())
+                << ", JSON: " << str;
             return false;
         }
 
@@ -52,11 +59,18 @@ public:
         {
             Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyFilters);
             if (it != query.body.MemberEnd()) {
-                if (!it->value.IsObject()) {
-                    return false;
-                }
-                if (!it->value.ObjectEmpty()) {
+                if (it->value.IsObject()) {
+                    if (!it->value.ObjectEmpty()) {
+                        query.filters = &it->value;
+                    }
+                } else if (it->value.IsArray()) {
+                    if (!it->value.Empty()) {
+                        query.filters = &it->value;
+                    }
+                } else if (it->value.IsUint()) {
                     query.filters = &it->value;
+                } else if (!it->value.IsNull()) {
+                    return false;
                 }
             }
         }

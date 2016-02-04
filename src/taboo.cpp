@@ -20,7 +20,7 @@ curl -vvv http://localhost:9002     \
 namespace taboo
 {
 
-void test_trie()
+void test_trie(const char* query)
 {
     Keeper keeper;
     {
@@ -28,36 +28,22 @@ void test_trie()
         keys.push_back("abcdefg");
         keys.push_back("abcdefghi");
         keys.push_back("abdef");
-        ItemPtr item = makeItem("{\"id\":10086,\"name\":\"wumch\"}");
+        ItemPtr item = makeItem("{\"id\":10086,\"name\":\"wumch\",\"age\":45}");
         keeper.attach(keys, item);
-
-        rapidjson::Value attr("name", 4);
-        CS_DUMP(item->dom.FindMember(attr)->value.GetString());
     }
+
     {
         KeyList keys;
         keys.push_back("abcdrg");
         keys.push_back("abcdef454i");
         keys.push_back("abdef白入定");
-        ItemPtr item = makeItem("{\"id\":10087,\"name\":\"入定\"}");
+        ItemPtr item = makeItem("{\"id\":10087,\"name\":\"入定\",\"age\":38}");
         keeper.attach(keys, item);
-
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        CS_DUMP(writer.StartObject());
-        CS_DUMP(buffer.GetString());
-        CS_DUMP(writer.Key("staff_id"));
-        CS_DUMP(buffer.GetString());
-        CS_DUMP(writer.Uint(10010));
-        CS_DUMP(buffer.GetString());
-        CS_DUMP(writer.Key("data"));
-        CS_DUMP(buffer.GetString());
-        CS_DUMP(item->dom.Accept(writer));
-        CS_DUMP(buffer.GetString());
     }
 
-    Seeker seeker;
-    const ItemPtrSet& items = seeker.seek("{\"prefix\":\"abc\"}");
+    boost::shared_ptr<Seeker> seeker(new Seeker);
+    const ItemPtrSet& items = seeker->seek(query);
+    CS_DUMP(items.size());
     for (ItemPtrSet::const_iterator it = items.begin(); it != items.end(); ++it) {
         CS_DUMP((*it)->id);
         CS_DUMP((*it)->dom["name"].GetString());
@@ -80,7 +66,7 @@ int main(int argc, char* argv[])
     taboo::Aside::initialize();
 
     CS_SAY("testing trie");
-    taboo::test_trie();
+    taboo::test_trie(argv[1]);
     CS_SAY("test trie done");
     return 0;
 

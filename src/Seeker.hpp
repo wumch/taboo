@@ -23,6 +23,8 @@ private:
 
     mutable Query query;
 
+    mutable FilterChain filter;
+
     mutable ItemPtrSet items;
 
 public:
@@ -33,20 +35,22 @@ public:
 
     const ItemPtrSet& seek(const char* _query) const
     {
-        Query::fromStr(query, _query);
-        match(query);
+        items.clear();
+        if (Query::rebuild(query, _query) &&
+            FilterChain::rebuild(filter, query)) {
+            CS_DUMP("seeking");
+            seek();
+        }
         return items;
     }
 
-    void match(const Query& query) const
+private:
+    void seek() const
     {
-        items.clear();
-        FilterChain filter = FilterChain::build(query);
         ItemCallback cb(farm, items, filter, query.num);
         trie.traverse(query.prefix, cb);
     }
 
-private:
     class ItemCallback
     {
     private:

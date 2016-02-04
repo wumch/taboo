@@ -129,16 +129,16 @@ void Config::initDesc()
         ("max-items", boost::program_options::value<std::size_t>()->default_value((0)),
             "max count of items, 0 for unlimited, default is 0.")
 
-        ("prefix-min-length", boost::program_options::value<std::size_t>()->default_value((2)),
+        ("prefix-min-length", boost::program_options::value<uint32_t>()->default_value((2)),
             "min length for prefix of query, at least 1, default is 2.")
-        ("prefix-max-length", boost::program_options::value<std::size_t>()->default_value((60)),
+        ("prefix-max-length", boost::program_options::value<uint32_t>()->default_value((60)),
             "max length for prefix of query, default is 60. NOTE: it's not applied for manage requests.")
 
-        ("max-iterations", boost::program_options::value<std::size_t>()->default_value((3000)),
+        ("max-iterations", boost::program_options::value<uint32_t>()->default_value((3000)),
             "max iterations for each matching, default is 3000.")
-        ("max-matches", boost::program_options::value<std::size_t>()->default_value((100)),
+        ("max-matches", boost::program_options::value<uint32_t>()->default_value((100)),
             "max match count to repsonse, default is 100.")
-        ("default-matches", boost::program_options::value<std::size_t>()->default_value((10)),
+        ("default-matches", boost::program_options::value<uint32_t>()->default_value((10)),
             "default match count to repsonse, default is 10.")
 
         ("key-id", boost::program_options::value<std::string>()->default_value(("id")),
@@ -192,7 +192,7 @@ void Config::load(const boost::filesystem::path& file)
     backlog = options["listen-backlog"].as<std::size_t>();
 
     maxManageConnections = options["max-manage-connections"].as<std::size_t>();
-    maxQueryConnections = options["max-ws-connections"].as<std::size_t>();
+    maxQueryConnections = options["max-query-connections"].as<std::size_t>();
 
     manageRecvTimeout = options["manage-receive-timeout"].as<std::time_t>();
     manageSendTimeout = options["manage-send-timeout"].as<std::time_t>();
@@ -205,20 +205,20 @@ void Config::load(const boost::filesystem::path& file)
     itemsAllocStep = options["items-allocate-step"].as<std::size_t>();
     maxItems = options["max-items"].as<std::size_t>();
 
-    prefixMinLen = options["prefix-min-len"].as<uint32_t>();
-    prefixMaxLen = options["prefix-max-len"].as<uint32_t>();
+    prefixMinLen = options["prefix-min-length"].as<uint32_t>();
+    prefixMaxLen = options["prefix-max-length"].as<uint32_t>();
 
     maxIterations = options["max-iterations"].as<uint32_t>();
     maxMatches = options["max-matches"].as<uint32_t>();
     defaultMatches = options["default-matches"].as<uint32_t>();
 
-    keyId = options["id-key"].as<std::string>();
-    keyPrefixes = options["id-prefixes"].as<std::string>();
-    keyPrefix = options["id-prefix"].as<std::string>();
-    keyFilters = options["id-filters"].as<std::string>();
-    keyExcludes = options["id-excludes"].as<std::string>();
-    keyFields = options["id-fields"].as<std::string>();
-    keyNum = options["id-num"].as<std::string>();
+    keyId = options["key-id"].as<std::string>();
+    keyPrefixes = options["key-prefixes"].as<std::string>();
+    keyPrefix = options["key-prefix"].as<std::string>();
+    keyFilters = options["key-filters"].as<std::string>();
+    keyExcludes = options["key-excludes"].as<std::string>();
+    keyFields = options["key-fields"].as<std::string>();
+    keyNum = options["key-num"].as<std::string>();
 
     CS_SAY(
         "loaded configs in [" << file.string() << "]:" << std::endl
