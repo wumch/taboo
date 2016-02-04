@@ -8,6 +8,7 @@
 #include <boost/functional/hash.hpp>
 #include "rapidjson/document.h"
 #include "Item.hpp"
+#include "Query.hpp"
 
 namespace taboo
 {
@@ -33,7 +34,7 @@ public:
         next = _next;
     }
 
-    static bool validate(const Value& _attr)
+    static bool validate(const Value& _value)
     {
         return true;
     }
@@ -55,24 +56,28 @@ protected:
 typedef boost::shared_ptr<BaseFilter> FilterPtr;
 
 
-class EmptyFilter:
+template<bool applyRes>
+class EmptyFilterImpl:
     public BaseFilter
 {
 public:
-    EmptyFilter():
+    EmptyFilterImpl():
         BaseFilter(Value())
     {}
 
     virtual bool _apply(const ItemPtr& item) const
     {
-        return true;
+        return applyRes;
     }
 
-    static EmptyFilter* create()
+    static boost::shared_ptr<EmptyFilterImpl> create()
     {
-        return new EmptyFilter;
+        return boost::make_shared<EmptyFilterImpl>();
     }
 };
+
+typedef EmptyFilterImpl<true> EmptyFilter;
+typedef EmptyFilterImpl<false> EmptyExcludeFilter;
 
 class EqualFilter:
     public BaseFilter
@@ -235,25 +240,65 @@ public:
 class FilterChain
 {
 protected:
-    typedef boost::shared_ptr<BaseFilter> Filter;
-    Filter match, exclude;
-    static const Value key_in, key_range, key_attr, key_exclude;
+    FilterPtr filter, exclude;
 
 public:
-    static Filter build(const rapidjson::Document& cond)
+    bool apply(const ItemPtr& item) const
     {
-        Filter filter(EmptyFilter::create());
-        for (rapidjson::Document::ConstMemberIterator it = cond.MemberBegin();
-            it != cond.MemberEnd(); ++it) {
+        return !exclude->apply(item) && filter->apply(item);
+    }
+
+    static FilterChain build(const Query& query)
+    {
+        FilterChain chain;
+        chain.filter = build<false>(query.filters);
+        chain.exclude = build<true>(query.excludes);
+        return chain;
+    }
+
+private:
+    template<bool excluding>
+    static FilterPtr build(const Value* cond)
+    {
+        FilterPtr _filter;
+        if (cond == NULL) {
+            _filter = EmptyFilterImpl<!excluding>::create();
+        } else if (cond->IsArray()) {
+            _filter = InFilter::create(Aside::instance()->keyId, *cond);
+        } else if (cond->IsUint()) {
+            _filter = EqualFilter::create(Aside::instance()->keyId, *cond);
+        } else {
+            _filter = byCond(cond);
+        }
+        return _filter;
+    }
+
+    // todo: too crude
+    static FilterPtr byCond(const Value* cond)
+    {
+        FilterPtr _filter(EmptyFilter::create());
+        for (rapidjson::Document::ConstMemberIterator it = cond->MemberBegin();
+            it != cond->MemberEnd(); ++it) {
             if (it->value.IsArray()) {
                 if (InFilter::validate(it->name, it->value)) {
-                    filter->attach(InFilter::create(it->name, it->value).get());
+                    attach(_filter, InFilter::create(it->name, it->value));
                 }
             } else {
-
+                if (EqualFilter::validate(it->value)) {
+                    attach(_filter, EqualFilter::create(it->name, it->value));
+                }
             }
         }
-        return filter;
+        return _filter;
+    }
+
+    static void attach(FilterPtr& _filter, const FilterPtr& next)
+    {
+        if (!_filter) {
+            _filter.reset(next.get());
+        } else {
+            _filter->attach(next.get());
+        }
     }
 };
 

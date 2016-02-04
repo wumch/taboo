@@ -22,7 +22,7 @@ private:
 public:
     ItemPool itemPool;
 
-    const Value keyId, keyPrefix, keyFilters, keyExcludes, keyFields;
+    const Value keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum;
 
     SlotMap slots;
 
@@ -41,6 +41,12 @@ private:
     Aside():
         itemPool(Config::instance()->itemsAllocStep, Config::instance()->maxItems),
         keyId(Config::instance()->keyId.data(), Config::instance()->keyId.length()),
+        keyPrefixes(Config::instance()->keyPrefixes.data(), Config::instance()->keyPrefixes.length()),
+        keyPrefix(Config::instance()->keyPrefix.data(), Config::instance()->keyPrefix.length()),
+        keyFilters(Config::instance()->keyFilters.data(), Config::instance()->keyFilters.length()),
+        keyExcludes(Config::instance()->keyExcludes.data(), Config::instance()->keyExcludes.length()),
+        keyFields(Config::instance()->keyFields.data(), Config::instance()->keyFields.length()),
+        keyNum(Config::instance()->keyNum.data(), Config::instance()->keyNum.length()),
         farm(slots)
     {}
 

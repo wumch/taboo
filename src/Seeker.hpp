@@ -8,6 +8,8 @@
 #include "Farm.hpp"
 #include "Item.hpp"
 #include "Trie.hpp"
+#include "Filter.hpp"
+#include "Query.hpp"
 
 namespace taboo
 {
@@ -19,31 +21,29 @@ private:
 
     const Farm& farm;
 
-    const std::size_t max_num;
+    mutable Query query;
 
     mutable ItemPtrSet items;
 
 public:
     Seeker():
         trie(Aside::instance()->trie),
-        farm(Aside::instance()->farm),
-        max_num(Config::instance()->maxMatches)
-    {
-        items.reserve(max_num);
-    }
+        farm(Aside::instance()->farm)
+    {}
 
-    const ItemPtrSet& seek(const std::string& key, std::size_t num) const
+    const ItemPtrSet& seek(const char* _query) const
     {
-        match(key, std::min(max_num, num));
+        Query::fromStr(query, _query);
+        match(query);
         return items;
     }
 
-    void match(const std::string& key, std::size_t num) const
+    void match(const Query& query) const
     {
         items.clear();
-        CS_RETURN_IF(key.empty() || num < 1);
-        ItemCallback cb(farm, items, num);
-        trie.traverse(key, cb);
+        FilterChain filter = FilterChain::build(query);
+        ItemCallback cb(farm, items, filter, query.num);
+        trie.traverse(query.prefix, cb);
     }
 
 private:
@@ -52,12 +52,13 @@ private:
     private:
         const Farm& _farm;
         ItemPtrSet& _items;
+        FilterChain& filter;
         const std::size_t _max_num;
         std::size_t iterations;
 
     public:
-        ItemCallback(const Farm& __farm, ItemPtrSet& __items, std::size_t __max_num):
-            _farm(__farm), _items(__items), _max_num(__max_num), iterations(0)
+        ItemCallback(const Farm& __farm, ItemPtrSet& __items, FilterChain& _filter, std::size_t __max_num):
+            _farm(__farm), _items(__items), filter(_filter), _max_num(__max_num), iterations(0)
         {}
 
         bool operator()(id_t id)
@@ -72,7 +73,10 @@ private:
             if (!slot.empty()) {
                 for (Slot::const_iterator it = slot.begin(); it != slot.end(); ++it) {
                     if (_items.size() < _max_num) {
-                        _items.insert(it->second);
+                        CS_DUMP(_items.size());
+                        if (filter.apply(it->second)) {
+                            _items.insert(it->second);
+                        }
                     }
                 }
             }

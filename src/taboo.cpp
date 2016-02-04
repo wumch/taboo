@@ -57,7 +57,7 @@ void test_trie()
     }
 
     Seeker seeker;
-    const ItemPtrSet& items = seeker.seek("abc", 10);
+    const ItemPtrSet& items = seeker.seek("{\"prefix\":\"abc\"}");
     for (ItemPtrSet::const_iterator it = items.begin(); it != items.end(); ++it) {
         CS_DUMP((*it)->id);
         CS_DUMP((*it)->dom["name"].GetString());

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "predef.hpp"
+#include <algorithm>
 #include <string>
 #include "stage/math.hpp"
 #include "Aside.hpp"
@@ -14,14 +15,16 @@ class Query
 private:
     Dom body;
 
+public:
     std::string prefix;
     Value* filters;
     Value* excludes;
     ValueSet fields;
+    std::size_t num;
 
 public:
     Query():
-        filters(NULL), excludes(NULL)
+        filters(NULL), excludes(NULL), num(0)
     {}
 
 public:
@@ -40,11 +43,14 @@ public:
                 return false;
             }
             query.prefix = it->value.GetString();
+            if (query.prefix.empty()) {
+                return false;
+            }
         }
 
         query.filters = NULL;
         {
-            Dom::ConstMemberIterator it = query.body.FindMember(Aside::instance()->keyFilters);
+            Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyFilters);
             if (it != query.body.MemberEnd()) {
                 if (!it->value.IsObject()) {
                     return false;
@@ -57,7 +63,7 @@ public:
 
         query.excludes = NULL;
         {
-            Dom::ConstMemberIterator it = query.body.FindMember(Aside::instance()->keyExcludes);
+            Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyExcludes);
             if (it != query.body.MemberEnd()) {
                 if (it->value.IsObject()) {
                     if (!it->value.ObjectEmpty()) {
@@ -75,20 +81,33 @@ public:
             }
         }
 
-        fields.clear();
+        query.fields.clear();
         {
-            Dom::ConstMemberIterator it = query.body.FindMember(Aside::instance()->keyFields);
+            Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyFields);
             if (it != query.body.MemberEnd()) {
                 if (it->value.IsArray()) {
                     for (Value::ConstMemberIterator i = it->value.MemberBegin(); i != it->value.MemberEnd(); ++i) {
                         if (!i->value.IsString()) {
                             return false;
                         }
-                        fields.insert(&i->value);
+                        query.fields.insert(&i->value);
                     }
                 } else if (it->value.IsString()) {
-                    fields.insert(&it->value);
+                    query.fields.insert(&it->value);
                 }
+            }
+        }
+
+        query.num = Config::instance()->defaultMatches;
+        {
+            Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyNum);
+            if (it != query.body.MemberEnd()) {
+                if (it->value.IsUint()) {
+                    query.num = std::min<std::size_t>(it->value.GetUint(), Config::instance()->maxMatches);
+                }
+            }
+            if (query.num < 1) {
+                query.num = Config::instance()->defaultMatches;
             }
         }
 

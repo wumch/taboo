@@ -40,32 +40,37 @@ public:
     }
 
     std::string programName;
+
     boost::filesystem::path pidFile;
-    std::size_t workerCount;
+
+    boost::filesystem::path trieFile, itemsFile;
+
+    boost::asio::ip::address manageHost, queryHost;
+    uint16_t managePort, queryPort;
+
+    std::size_t manageWorkers, queryWorkers;
+
     std::size_t stackSize;
     bool memlock;
     std::size_t maxOpenFiles;
-
     bool reuseAddress;
-    std::size_t maxManagerConnections;
-    std::size_t maxWsConnections;
-    std::size_t backlog;
     bool tcpNodelay;
+    std::size_t backlog;
 
-    boost::asio::ip::address host;
-    uint16_t port;
+    std::size_t maxManageConnections;
+    std::size_t maxQueryConnections;
 
-    std::time_t managerRecvTimeout, managerSendTimeout,
-        wsRecvTimeout, wsSendTimeout;
+    std::time_t manageRecvTimeout, manageSendTimeout,
+        queryRecvTimeout, querySendTimeout;
     std::time_t connectionMaxIdle, connectionCheckInterval;
 
-    std::size_t maxIterations;
-    std::size_t maxMatches, defaultMatches;
-
-    std::string keyId, keyPrefix, KeyFilters, keyExcludes, keyFields;
     std::size_t itemsAllocStep, maxItems;
 
-    std::size_t prefixMinLen, prefixMaxLen;
+    uint32_t prefixMinLen, prefixMaxLen;
+
+    uint32_t maxIterations, maxMatches, defaultMatches;
+
+    std::string keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum;
 };
 
 }
