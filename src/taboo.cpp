@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
     taboo::Aside::initialize();
 
     CS_SAY("testing trie");
-    taboo::test_trie(argv[1]);
+    taboo::test_trie(argv[argc - 1]);
     CS_SAY("test trie done");
     return 0;
 

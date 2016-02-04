@@ -6,8 +6,8 @@
 #include <vector>
 #include <algorithm>
 #include <boost/shared_ptr.hpp>
-
 #include "Aside.hpp"
+#include "Trie.hpp"
 #include "Farm.hpp"
 #include "Item.hpp"
 

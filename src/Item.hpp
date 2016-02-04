@@ -13,6 +13,10 @@
 namespace taboo
 {
 
+typedef uint32_t id_t;
+typedef rapidjson::Document Dom;
+typedef rapidjson::Value Value;
+
 class Item
 {
 public:

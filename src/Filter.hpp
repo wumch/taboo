@@ -92,10 +92,11 @@ class EqualFilterImpl:
 {
 protected:
     const Value& value;
+    bool mustMiss;
 
 public:
     EqualFilterImpl(const Value& _attr, const Value& _value):
-        BaseFilter(_attr), value(_value)
+        BaseFilter(_attr), value(_value), mustMiss(value.IsNull())
     {
         CS_SAY("equal filter built");
     }
@@ -114,8 +115,11 @@ protected:
     virtual bool _apply(const ItemPtr& item) const
     {
         rapidjson::Document::ConstMemberIterator it = item->dom.FindMember(attr);
-        CS_DUMP(it->name.GetString());
-        return (it != item->dom.MemberEnd() && it->value == value) ? resOnEqual : !resOnEqual;
+        if (mustMiss) {
+            return (it == item->dom.MemberEnd()) == resOnEqual;
+        } else {
+            return (it != item->dom.MemberEnd() && it->value == value) == resOnEqual;
+        }
     }
 };
 
@@ -127,10 +131,11 @@ class InFilter:
 {
 protected:
     ValueSet values;
+    bool allowMiss;
 
 public:
     explicit InFilter(const Value& _attr, const Value& _values):
-        BaseFilter(_attr)
+        BaseFilter(_attr), allowMiss(false)
     {
         fill_values(_values);
     }
@@ -148,20 +153,22 @@ public:
 protected:
     virtual bool _apply(const ItemPtr& item) const
     {
-        CS_DUMP(attr.GetString());
         Value::MemberIterator it = item->dom.FindMember(attr);
-        CS_DUMP(it->value.GetUint());
         if (it != item->dom.MemberEnd()) {
             return values.find(&it->value) != values.end();
         }
-        return false;
+        return allowMiss;
     }
 
     void fill_values(const Value& _values)
     {
         for (rapidjson::Document::ConstValueIterator it = _values.Begin();
             it != _values.End(); ++it) {
-            values.insert(&*it);
+            if (it->IsNull()) {
+                allowMiss = true;
+            } else {
+                values.insert(&*it);
+            }
         }
     }
 };
@@ -185,7 +192,7 @@ class RangeFilter:
     public BaseFilter
 {
 protected:
-    const Value& min, &max;
+    const Value& min, & max;
 
 public:
     RangeFilter(const Value& _attr, const Value& _min, const Value& _max):
@@ -278,7 +285,6 @@ private:
         if (cond == NULL) {
             _filter.reset();
         } else if (cond->IsArray()) {
-            CS_DUMP("here");
             _filter = InFilter::create(Aside::instance()->keyId, *cond);
         } else if (cond->IsUint()) {
             _filter = EqualFilter::create(Aside::instance()->keyId, *cond);

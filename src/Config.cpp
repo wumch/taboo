@@ -96,20 +96,18 @@ void Config::initDesc()
             boost::lexical_cast<std::string>(std::min<std::size_t>(1, stage::getCpuNum() - 1))),
             "num of workers for query, default is num of CPU cores minus 1.")
 
-        ("stack-size", boost::program_options::value<std::string>()->default_value(
-            boost::lexical_cast<std::string>(stage::getRlimitCur(RLIMIT_STACK))),
-            "stack size limit, default not set.")
+        ("stack-size", boost::program_options::value<std::string>()->default_value("0"),
+            "stack size limit, 0 is not set, default is 0.")
+        ("max-open-files", boost::program_options::value<std::string>()->default_value("0"),
+            "max open files, 0 is not set, default is 0.")
         ("memlock", boost::program_options::bool_switch()->default_value(false),
             "memlock after startup or not, default is no")
-        ("max-open-files", boost::program_options::value<std::string>()->default_value(
-            boost::lexical_cast<std::string>(stage::getRlimitCur(RLIMIT_NOFILE))),
-            "max open files, default not set.")
         ("reuse-address", boost::program_options::bool_switch()->default_value(true),
             "whether reuse-address on startup or not, default on.")
         ("tcp-nodelay", boost::program_options::bool_switch()->default_value(true),
             "enables tcp-nodelay feature or not, default on.")
         ("listen-backlog", boost::program_options::value<std::string>()->default_value("1k"),
-            "listen backlog, default is 1k.")
+            "listen backlog, default is 1K.")
 
         ("max-manage-connections", boost::program_options::value<std::string>()->default_value("10K"),
             "max manage connections, default 10K.")
@@ -143,9 +141,9 @@ void Config::initDesc()
         ("max-iterations", boost::program_options::value<std::string>()->default_value(("3000")),
             "max iterations for each matching, default is 3000.")
         ("max-matches", boost::program_options::value<std::string>()->default_value(("100")),
-            "max match count to repsonse, default is 100.")
+            "max count of items to match for query, default is 100.")
         ("default-matches", boost::program_options::value<std::string>()->default_value(("10")),
-            "default match count to repsonse, default is 10.")
+            "default count of items to match for query, default is 10.")
 
         ("key-id", boost::program_options::value<std::string>()->default_value(("id")),
             "key name for 'id' of items, default is 'id'.")
@@ -161,7 +159,7 @@ void Config::initDesc()
         ("key-fields", boost::program_options::value<std::string>()->default_value(("fields")),
             "key name for 'fields'' of query, default is 'fields'.")
         ("key-num", boost::program_options::value<std::string>()->default_value(("num")),
-            "key name for 'num'' of query, default is 'num'.")
+            "key name for 'num' of query, default is 'num'.")
     ;
 }
 
@@ -177,13 +175,13 @@ void Config::load(const boost::filesystem::path& file)
     boost::program_options::notify(options);
 
     try {
-        loadValues(file);
+        loadOptions(file);
     } catch (const std::exception& e) {
         CS_DIE("failed on load config options: " << CS_OC_RED(e.what()));
     }
 }
 
-void Config::loadValues(const boost::filesystem::path& file)
+void Config::loadOptions(const boost::filesystem::path& file)
 {
     pidFile = options["pid-file"].as<boost::filesystem::path>();
 
@@ -199,8 +197,8 @@ void Config::loadValues(const boost::filesystem::path& file)
     queryWorkers = toInteger<uint32_t>(options["query-workers"].as<std::string>());
 
     stackSize = toInteger<std::size_t>(options["stack-size"].as<std::string>());
-    memlock = options["memlock"].as<bool>();
     maxOpenFiles = toInteger<std::size_t>(options["max-open-files"].as<std::string>());
+    memlock = options["memlock"].as<bool>();
     reuseAddress = options["reuse-address"].as<bool>();
     tcpNodelay = options["tcp-nodelay"].as<bool>();
     backlog = toInteger<uint32_t>(options["listen-backlog"].as<std::string>());

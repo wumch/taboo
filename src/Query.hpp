@@ -4,12 +4,47 @@
 #include "predef.hpp"
 #include <algorithm>
 #include <string>
+#include <boost/unordered_set.hpp>
 #include "rapidjson/error/en.h"
+#include "stage/hash.hpp"
 #include "stage/math.hpp"
 #include "Aside.hpp"
 
 namespace taboo
 {
+
+class ValueHasher
+{
+public:
+    int operator()(const Value* value) const
+    {
+        if (value->IsInt()) {
+            return boost::hash<int64_t>()(value->GetInt64());
+        } else if (value->IsString()) {
+            return stage::SDBMHash()(value->GetString(), value->GetStringLength());
+        } else if (value->IsNull()) {
+            return boost::hash<uint8_t>()(0);
+        } else if (value->IsBool()) {
+            return boost::hash<bool>()(value->GetBool());;
+        } else if (value->IsDouble()) {
+            return boost::hash<double>()(value->GetDouble());;
+        }
+        LOG_EVERY_N(WARNING, 100) << "hash unroll mismatched";
+        return boost::hash<uint8_t>()(0);
+    }
+};
+
+class ValueEqualer
+{
+public:
+    bool operator()(const Value* lhs, const Value* rhs) const
+    {
+        return *lhs == *rhs;
+    }
+};
+
+typedef boost::unordered_set<const Value*, ValueHasher, ValueEqualer> ValueSet;
+
 
 class Query
 {
@@ -17,10 +52,9 @@ private:
     Dom body;
 
 public:
-    std::string prefix;
-    Value* filters;
-    Value* excludes;
     ValueSet fields;
+    std::string prefix;
+    Value* filters, * excludes;
     std::size_t num;
 
 public:

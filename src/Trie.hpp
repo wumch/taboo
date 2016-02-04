@@ -3,6 +3,7 @@
 
 #include "predef.hpp"
 #include <string>
+#include <list>
 #define USE_FAST_LOAD
 #include "cedar/cedar.h"
 #include "Item.hpp"
@@ -10,9 +11,15 @@
 namespace taboo
 {
 
+typedef std::list<std::string> KeyList;
+
 class Trie
 {
 private:
+    enum {
+        no_value = static_cast<id_t>(-1),
+        no_path  = static_cast<id_t>(-2),
+    };
     typedef cedar::da<id_t,no_value, no_path, false> DA;
 
     DA da;
@@ -28,8 +35,6 @@ public:
             id_t matched = da.traverse(it->data(), node_pos, key_pos, it->length());
             if (matched == no_value || matched == no_path)
             {
-                CS_DUMP(da.num_keys());
-                CS_DUMP(da.size());
                 cb(da.update(it->data(), it->length(), id));
                 attached = true;
             }

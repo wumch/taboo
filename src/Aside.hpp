@@ -51,10 +51,13 @@ private:
     {}
 
     friend int ::main(int, char*[]);
-    static void initialize()
+    static bool initialize()
     {
         _instance = new Aside;
+        return _initialize();
     }
+
+    static bool _initialize();
 };
 
 }

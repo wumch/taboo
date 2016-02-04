@@ -30,7 +30,7 @@ private:
 
     void load(const boost::filesystem::path& file);
 
-    void loadValues(const boost::filesystem::path& file);
+    void loadOptions(const boost::filesystem::path& file);
 
     template<typename IntType> IntType toInteger(const std::string& str) const;
 
@@ -55,8 +55,8 @@ public:
     uint32_t manageWorkers, queryWorkers;
 
     std::size_t stackSize;
-    bool memlock;
     std::size_t maxOpenFiles;
+    bool memlock;
     bool reuseAddress;
     bool tcpNodelay;
     std::size_t backlog;
