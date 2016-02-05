@@ -32,12 +32,12 @@ public:
         for (KeyList::const_iterator it = keys.begin(); it != keys.end(); ++it)
         {
             std::size_t node_pos = 0, key_pos = 0;
-            id_t matched = da.traverse(it->data(), node_pos, key_pos, it->length());
-            if (matched == no_value || matched == no_path)
-            {
-                cb(da.update(it->data(), it->length(), id));
+            id_t slotId = da.traverse(it->data(), node_pos, key_pos, it->length());
+            if (slotId == no_value || slotId == no_path) {
+                slotId = da.update(it->data(), it->length(), id);
                 attached = true;
             }
+            cb(slotId);
         }
         return attached;
     }

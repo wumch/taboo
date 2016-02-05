@@ -56,7 +56,7 @@ class ItemPtrHasher
 public:
     int operator()(const ItemPtr& item) const
     {
-        return boost::hash<int>()(item->id);
+        return boost::hash<id_t>()(item->id);
     }
 };
 

@@ -3,6 +3,7 @@
 
 #include "predef.hpp"
 #include <boost/pool/object_pool.hpp>
+#include <boost/thread/mutex.hpp>
 #include "Config.hpp"
 #include "Farm.hpp"
 #include "predef.hpp"
@@ -29,6 +30,8 @@ public:
     Farm farm;
 
     Trie trie;
+
+    boost::shared_mutex accessMutex;;
 
     static Aside* instance()
     {
