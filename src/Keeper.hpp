@@ -30,13 +30,19 @@ public:
     bool attach(const KeyList& keys, const ItemPtr& item)
     {
         AttachCallback cb(farm, item);
+        WriteLock lock(Aside::instance()->accessMutex);
         return trie.attach(keys, item->id, cb);
     }
 
     bool update_item(const std::string& key, const ItemPtr& item)
     {
-        id_t id = trie[key];
+        id_t id;
+        {
+            ReadLock lock(Aside::instance()->accessMutex);
+            id = trie[key];
+        }
         if (id) {
+            WriteLock lock(Aside::instance()->accessMutex);
             return farm.detach(id, item);
         }
         return false;
@@ -46,6 +52,7 @@ public:
     bool detach(const KeyList& keys, const ItemPtr& item)
     {
         EraseCallback cb(farm, item);
+        WriteLock lock(Aside::instance()->accessMutex);
         return trie.erase(keys, item->id, cb);
     }
 

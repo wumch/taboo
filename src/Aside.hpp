@@ -15,6 +15,9 @@ extern int main(int, char*[]);
 namespace taboo
 {
 
+typedef boost::shared_lock<boost::shared_mutex> ReadLock;
+typedef boost::unique_lock<boost::shared_mutex> WriteLock;
+
 class Aside
 {
 private:

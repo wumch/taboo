@@ -38,7 +38,6 @@ public:
         items.clear();
         if (Query::rebuild(query, _query) &&
             FilterChain::rebuild(filter, query)) {
-            CS_DUMP("seeking");
             seek();
         }
         return items;
@@ -48,6 +47,7 @@ private:
     void seek() const
     {
         ItemCallback cb(farm, items, filter, query.num);
+        ReadLock lock(Aside::instance()->accessMutex);
         trie.traverse(query.prefix, cb);
     }
 
