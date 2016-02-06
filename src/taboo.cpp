@@ -16,6 +16,7 @@ curl -vvv http://localhost:9002     \
 #include "Aside.hpp"
 #include "Keeper.hpp"
 #include "Seeker.hpp"
+#include "Manager.hpp"
 
 namespace taboo
 {
@@ -62,12 +63,19 @@ void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
 int main(int argc, char* argv[])
 {
     google::InitGoogleLogging(argv[0]);
-    taboo::Config::initialize(argc, argv);
-    taboo::Aside::initialize();
+    if (!taboo::Config::initialize(argc, argv)
+        || !taboo::Aside::initialize()
+        || !taboo::Manager::initialize()) {
+        CS_DIE("failed on initialize");
+    }
 
     CS_SAY("testing trie");
     taboo::test_trie(argv[argc - 1]);
     CS_SAY("test trie done");
+
+    taboo::Manager::instance()->start();
+    getchar();
+
     return 0;
 
     server print_server;

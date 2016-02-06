@@ -5,7 +5,6 @@
 #include <string>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/asio/ip/tcp.hpp>
 
 extern int main(int, char*[]);
 
@@ -22,7 +21,7 @@ private:
     {}
 
     friend int ::main(int, char*[]);
-    static void initialize(int argc, char* argv[]);
+    static bool initialize(int argc, char* argv[]);
 
     void init(int argc, char* argv[]);
 
@@ -49,7 +48,7 @@ public:
 
     boost::filesystem::path trieFile, itemsFile;
 
-    boost::asio::ip::address manageHost, queryHost;
+    std::string manageHost, queryHost;
     uint16_t managePort, queryPort;
 
     uint32_t manageWorkers, queryWorkers;
@@ -64,6 +63,7 @@ public:
     std::size_t maxManageConnections;
     std::size_t maxQueryConnections;
 
+    std::size_t manageConnectionMemoryLimit, manageConnectionReadBuffer;
     std::time_t manageRecvTimeout, manageSendTimeout,
         queryRecvTimeout, querySendTimeout;
     std::time_t connectionMaxIdle, connectionCheckInterval;
@@ -74,7 +74,9 @@ public:
 
     uint32_t maxIterations, maxMatches, defaultMatches;
 
-    std::string keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum;
+    std::string manageKey, manageSecret, signHyphen, signDelimiter;
+
+    std::string keySign, keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum;
 };
 
 }

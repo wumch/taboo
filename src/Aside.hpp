@@ -3,7 +3,8 @@
 
 #include "predef.hpp"
 #include <boost/pool/object_pool.hpp>
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/lock_types.hpp>
 #include "Config.hpp"
 #include "Farm.hpp"
 #include "predef.hpp"

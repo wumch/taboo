@@ -16,10 +16,11 @@
 namespace taboo
 {
 
-void Config::initialize(int argc, char* argv[])
+bool Config::initialize(int argc, char* argv[])
 {
     _instance = new Config;
     _instance->init(argc, argv);
+    return true;
 }
 
 void Config::init(int argc, char* argv[])
@@ -109,6 +110,10 @@ void Config::initDesc()
         ("listen-backlog", boost::program_options::value<std::string>()->default_value("1k"),
             "listen backlog, default is 1K.")
 
+        ("manage-connection-memory-limit", boost::program_options::value<std::string>()->default_value("256K"),
+            "memory size limit per manage connection, 0 is unlimited, default is 256K.")
+        ("manage-connection-read-buffer", boost::program_options::value<std::string>()->default_value("128K"),
+            "size of read buffer for manage connections, default is 128K.")
         ("max-manage-connections", boost::program_options::value<std::string>()->default_value("10K"),
             "max manage connections, default 10K.")
         ("max-query-connections", boost::program_options::value<std::string>()->default_value("1M"),
@@ -145,6 +150,17 @@ void Config::initDesc()
         ("default-matches", boost::program_options::value<std::string>()->default_value(("10")),
             "default count of items to match for query, default is 10.")
 
+        ("manage-key", boost::program_options::value<std::string>(),
+            "access key for manage.")
+        ("manage-secret", boost::program_options::value<std::string>(),
+            "access secret for manage.")
+        ("sign-hyphen", boost::program_options::value<std::string>()->default_value("="),
+            "string for join key and value when generating signature, default is '='.")
+        ("sign-delimiter", boost::program_options::value<std::string>()->default_value("&"),
+            "string for join key-value pairs when generate signature, default is '&'.")
+
+        ("key-sign", boost::program_options::value<std::string>()->default_value(("sign")),
+            "key name for 'sign' of manage requests, default is 'sign'.")
         ("key-id", boost::program_options::value<std::string>()->default_value(("id")),
             "key name for 'id' of items, default is 'id'.")
         ("key-prefixes", boost::program_options::value<std::string>()->default_value(("prefixes")),
@@ -188,9 +204,9 @@ void Config::loadOptions(const boost::filesystem::path& file)
     trieFile = options["trie-file"].as<boost::filesystem::path>();
     itemsFile = options["items-file"].as<boost::filesystem::path>();
 
-    manageHost = boost::asio::ip::address_v4::from_string(options["manage-host"].as<std::string>());
+    manageHost = options["manage-host"].as<std::string>();
     managePort = options["manage-port"].as<uint16_t>();
-    queryHost = boost::asio::ip::address_v4::from_string(options["query-host"].as<std::string>());
+    queryHost = options["query-host"].as<std::string>();
     queryPort = options["query-port"].as<uint16_t>();
 
     manageWorkers = toInteger<uint32_t>(options["manage-workers"].as<std::string>());
@@ -203,6 +219,8 @@ void Config::loadOptions(const boost::filesystem::path& file)
     tcpNodelay = options["tcp-nodelay"].as<bool>();
     backlog = toInteger<uint32_t>(options["listen-backlog"].as<std::string>());
 
+    manageConnectionMemoryLimit = toInteger<std::size_t>(options["manage-connection-memory-limit"].as<std::string>());
+    manageConnectionReadBuffer = toInteger<std::size_t>(options["manage-connection-read-buffer"].as<std::string>());
     maxManageConnections = toInteger<std::size_t>(options["max-manage-connections"].as<std::string>());
     maxQueryConnections = toInteger<std::size_t>(options["max-query-connections"].as<std::string>());
 
@@ -224,6 +242,18 @@ void Config::loadOptions(const boost::filesystem::path& file)
     maxMatches = toInteger<uint32_t>(options["max-matches"].as<std::string>());
     defaultMatches = toInteger<uint32_t>(options["default-matches"].as<std::string>());
 
+    if (options.find("manage-key") == options.end()) {
+        CS_DIE("config option 'manage-key' is required");
+    }
+    if (options.find("manage-secret") == options.end()) {
+        CS_DIE("config option 'manage-secret' is required");
+    }
+    manageKey = options["manage-key"].as<std::string>();
+    manageSecret = options["manage-secret"].as<std::string>();
+    signHyphen = options["sign-hyphen"].as<std::string>();
+    signDelimiter = options["sign-delimiter"].as<std::string>();
+
+    keySign = options["key-sign"].as<std::string>();
     keyId = options["key-id"].as<std::string>();
     keyPrefixes = options["key-prefixes"].as<std::string>();
     keyPrefix = options["key-prefix"].as<std::string>();
@@ -253,6 +283,8 @@ void Config::loadOptions(const boost::filesystem::path& file)
         _CSOCKS_OUT_CONFIG_PROPERTY(tcpNodelay)
         _CSOCKS_OUT_CONFIG_PROPERTY(backlog)
 
+        _CSOCKS_OUT_CONFIG_PROPERTY(manageConnectionMemoryLimit)
+        _CSOCKS_OUT_CONFIG_PROPERTY(manageConnectionReadBuffer)
         _CSOCKS_OUT_CONFIG_PROPERTY(maxManageConnections)
         _CSOCKS_OUT_CONFIG_PROPERTY(maxQueryConnections)
 
@@ -270,6 +302,12 @@ void Config::loadOptions(const boost::filesystem::path& file)
         _CSOCKS_OUT_CONFIG_PROPERTY(maxIterations)
         _CSOCKS_OUT_CONFIG_PROPERTY(maxMatches)
         _CSOCKS_OUT_CONFIG_PROPERTY(defaultMatches)
+
+        _CSOCKS_OUT_CONFIG_PROPERTY(manageKey)
+        _CSOCKS_OUT_CONFIG_PROPERTY(manageSecret)
+        _CSOCKS_OUT_CONFIG_PROPERTY(signHyphen)
+        _CSOCKS_OUT_CONFIG_PROPERTY(signDelimiter)
+        _CSOCKS_OUT_CONFIG_PROPERTY(keySign)
 
         _CSOCKS_OUT_CONFIG_PROPERTY(keyId)
         _CSOCKS_OUT_CONFIG_PROPERTY(keyPrefixes)
