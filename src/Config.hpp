@@ -3,6 +3,7 @@
 
 #include "predef.hpp"
 #include <string>
+#include <boost/thread/mutex.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -17,9 +18,10 @@ private:
     static Config* _instance;
 
     Config():
-        desc("allowed config options")
+        desc("allowed options")
     {}
 
+    static boost::mutex configLoadMutex;
     friend int ::main(int, char*[]);
     static bool initialize(int argc, char* argv[]);
 
@@ -33,6 +35,8 @@ private:
 
     template<typename IntType> IntType toInteger(const std::string& name) const;
     template<typename T> T to(const std::string& name) const;
+
+    bool purposeShowHelp, purposeTestConfig, purposeReloadConfig;
 
     bool noFile;
     boost::filesystem::path file;

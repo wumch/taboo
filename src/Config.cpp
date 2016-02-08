@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <exception>
+#include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -11,15 +12,34 @@
 #include "stage/sys.hpp"
 #include "stage/net.hpp"
 
-#define _CSOCKS_OUT_CONFIG_PROPERTY(property)     << CS_OC_GREEN(#property) << ":\t\t" << CS_OC_RED(property) << std::endl
+#define _TABOO_OUT_CONFIG_OPTION(property)     << CS_OC_GREEN(#property)         \
+    << ":\t\t" << CS_OC_RED(property) << std::endl
 
 namespace taboo
 {
 
 bool Config::initialize(int argc, char* argv[])
 {
-    _instance = new Config;
-    _instance->init(argc, argv);
+    typedef boost::shared_ptr<Config> ConfigPtr;
+    {
+        try {
+            boost::mutex::scoped_lock lock(configLoadMutex);
+            ConfigPtr ptr(new Config);
+            ptr->init(argc, argv);
+            _instance = ptr.get();
+        } catch (const std::logic_error& e) {
+            CS_DIE("error: " << e.what());
+        } catch (const std::runtime_error& e) {
+            CS_DIE("error: " << e.what());
+        } catch (const std::exception& e) {
+            CS_DIE("error: " << e.what());
+        }
+    }
+
+    if (_instance->purposeShowHelp || _instance->purposeTestConfig) {
+        std::exit(EXIT_SUCCESS);
+    }
+
     return true;
 }
 
@@ -35,29 +55,43 @@ void Config::init(int argc, char* argv[])
     boost::filesystem::path defaultConfig("etc/" + programName + ".conf");
     desc.add_options()
         ("help,h", "show this help and exit.")
+        ("test-config,t", "test config options and exit.")
+        ("reload-config,r", "reload config options from previous loaded config file. "
+            "(NOTE: new specified command line options are omitted, and "
+            "old command line options will be overridden by ones from config file)")
         ("config,c", boost::program_options::value<boost::filesystem::path>()->default_value(defaultConfig),
-            ("config file, default " + defaultConfig.string() + ".").c_str())
+            ("config file, default " + defaultConfig.string() + ". "
+                "options from config file will be overridden by ones from command line.").c_str())
         ("no-config-file", boost::program_options::bool_switch()->default_value(false),
-            "force do not load options from config file, default false.")
-        ("test-config,t", boost::program_options::bool_switch()->default_value(false),
-            "test config options and exit.");
+            "force do not load options from config file, default false.");
     initDesc();
 
-    try
-    {
+    try {
         boost::program_options::command_line_parser parser(argc, argv);
-        parser.options(desc).allow_unregistered().style(boost::program_options::command_line_style::unix_style);
+        parser.options(desc).style(boost::program_options::command_line_style::unix_style);
         boost::program_options::store(parser.run(), options);
-    }
-    catch (const std::exception& e)
-    {
-        throw std::runtime_error(std::string(e.what()) + CS_LINESEP + boost::lexical_cast<std::string>(desc));
+    } catch (const std::exception& e) {
+        throw std::runtime_error(std::string(e.what()) + CS_LINESEP
+            + CS_OC_BLACK_BEGIN + boost::lexical_cast<std::string>(desc) + CS_OC_END);
     }
     boost::program_options::notify(options);
 
-    if (options.count("help")) {
-        std::cout << desc << std::endl;
-        std::exit(EXIT_SUCCESS);
+    if (options.count("manage-key") || options.count("manage-secret")) {
+        CS_ERR("warning: specify 'manage-key' or 'manage-secret' in command line is dangerous.");
+    }
+
+    purposeShowHelp = options.count("help");
+    purposeTestConfig = options.count("test-config");
+    purposeReloadConfig = options.count("reload-config");
+
+    if (purposeShowHelp) {
+        std::cout
+            << "usage: " << argv[0] << " [options]" << CS_LINESEP
+            << programName << " is an HTTP/WebSocket based prefix predict server with "
+                "user-customizeable property " << CS_LINESEP
+                << "matching feature. See " << TABOO_HOME_PAGE << " for more information."
+            << CS_LINESEP << CS_LINESEP
+            << desc << CS_LINESEP;
     } else {
         noFile = to<bool>("no-config-file");
         if (noFile) {
@@ -68,9 +102,9 @@ void Config::init(int argc, char* argv[])
         }
     }
 
-    if (options.count("test-config")) {
-        CS_ECHO(CS_OC_GREEN("config " << (file.empty() ? "" : (std::string("file '") + file.string() + "'")) << " is ok."));
-        std::exit(EXIT_SUCCESS);
+    if (purposeTestConfig) {
+        CS_ECHO(CS_OC_GREEN("config " << (file.empty() ? "" :
+            (std::string("file '") + file.string() + "'")) << " is ok."));
     }
 }
 
@@ -86,14 +120,14 @@ void Config::initDesc()
             ("pid file, default" + defaultPidFile.string() + ".").c_str())
 
         ("store-on-exit", boost::program_options::bool_switch()->default_value(true),
-            "store trie/items into 'trie-file'/'items-file' before exit or not, default is yes")
+            "store trie/items into @trie-file/@items-file before exit or not, default is yes.")
         ("restore-on-start", boost::program_options::bool_switch()->default_value(true),
-            "restore trie/items from 'trie-file'/'items-file' when startup or not, default is yes")
+            "restore trie/items from @trie-file/@items-file when startup or not, default is yes.")
 
         ("trie-file", boost::program_options::value<boost::filesystem::path>()->default_value(defaultTrieFile),
-            ("file to store trie, default" + defaultStorePath.string() + "trie.dat").c_str())
+            ("file to store trie, default is '" + defaultStorePath.string() + "trie.dat'.").c_str())
         ("items-file", boost::program_options::value<boost::filesystem::path>()->default_value(defaultItemsFile),
-            ("file to store items, default" + defaultStorePath.string() + "items.dat").c_str())
+            ("file to store items, default is '" + defaultStorePath.string() + "items.dat'.").c_str())
 
         ("manage-host", boost::program_options::value<std::string>()->default_value(lanIp),
             ("host to bind for manage, default is " + lanIp).c_str())
@@ -154,7 +188,7 @@ void Config::initDesc()
         ("prefix-min-length", boost::program_options::value<uint32_t>()->default_value((2)),
             "min length for prefix of query, at least 1, default is 2.")
         ("prefix-max-length", boost::program_options::value<uint32_t>()->default_value((60)),
-            "max length for prefix of query, default is 60. NOTE: it's not applied for manage requests.")
+            "max length for prefix of query, default is 60. NOTE: this is not applied for manage requests.")
 
         ("max-iterations", boost::program_options::value<std::string>()->default_value(("3000")),
             "max iterations for each matching, default is 3000.")
@@ -166,9 +200,9 @@ void Config::initDesc()
         ("check-signature", boost::program_options::bool_switch()->default_value(true),
             "check signature or not for manage requests, default is yes.")
         ("manage-key", boost::program_options::value<std::string>(),
-            "access key for manage, REQUIRED when 'check-signature'=yes.")
+            "access key for manage, REQUIRED when @check-signature='yes'.")
         ("manage-secret", boost::program_options::value<std::string>(),
-            "access secret for manage, REQUIRED when 'check-signature'=yes.")
+            "access secret for manage, REQUIRED when @check-signature='yes'.")
         ("sign-hyphen", boost::program_options::value<std::string>()->default_value("="),
             "glue for join key and value when generating signature, default is '='.")
         ("sign-delimiter", boost::program_options::value<std::string>()->default_value("&"),
@@ -203,15 +237,12 @@ void Config::loadFile()
     } catch (const std::exception& e) {
         boost::system::error_code err;
         boost::filesystem::path path = boost::filesystem::canonical(file, err);
-        throw std::runtime_error("faild on load config-file: " + (err ? file : path).string() + CS_LINESEP_STR + e.what());
+        throw std::runtime_error("faild on load config-file: "
+            + (err ? file : path).string() + CS_LINESEP_STR + e.what());
     }
     boost::program_options::notify(options);
 
-    try {
-        loadOptions();
-    } catch (const std::exception& e) {
-        throw std::runtime_error("failed on load config options: " + std::string(e.what()));
-    }
+    loadOptions();
 }
 
 void Config::loadOptions()
@@ -272,6 +303,10 @@ void Config::loadOptions()
     if (checkSign) {
         manageKey = to<std::string>("manage-key");
         manageSecret = to<std::string>("manage-secret");
+        if (manageKey.empty() || manageSecret.empty()) {
+            throw std::logic_error("config options 'manage-key' and "
+                "'manage-secret' must not be empty");
+        }
     }
     signHyphen = to<std::string>("sign-hyphen");
     signDelimiter = to<std::string>("sign-delimiter");
@@ -291,68 +326,68 @@ void Config::loadOptions()
     boost::filesystem::path path = boost::filesystem::canonical(file, err);
 #endif
     CS_SAY(
-        "loaded configs in [" << (err ? file : path) << "]:" << std::endl
+        "loaded configs in [" << (err ? file : path) << "]:" << CS_LINESEP
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(programName)
-        _CSOCKS_OUT_CONFIG_PROPERTY(file)
-        _CSOCKS_OUT_CONFIG_PROPERTY(pidFile)
+        _TABOO_OUT_CONFIG_OPTION(programName)
+        _TABOO_OUT_CONFIG_OPTION(file)
+        _TABOO_OUT_CONFIG_OPTION(pidFile)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(storeOnExit)
-        _CSOCKS_OUT_CONFIG_PROPERTY(restoreOnStart)
-        _CSOCKS_OUT_CONFIG_PROPERTY(trieFile)
-        _CSOCKS_OUT_CONFIG_PROPERTY(itemsFile)
+        _TABOO_OUT_CONFIG_OPTION(storeOnExit)
+        _TABOO_OUT_CONFIG_OPTION(restoreOnStart)
+        _TABOO_OUT_CONFIG_OPTION(trieFile)
+        _TABOO_OUT_CONFIG_OPTION(itemsFile)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(manageHost)
-        _CSOCKS_OUT_CONFIG_PROPERTY(managePort)
-        _CSOCKS_OUT_CONFIG_PROPERTY(queryHost)
-        _CSOCKS_OUT_CONFIG_PROPERTY(queryPort)
-        _CSOCKS_OUT_CONFIG_PROPERTY(pidFile)
-        _CSOCKS_OUT_CONFIG_PROPERTY(queryWorkers)
-        _CSOCKS_OUT_CONFIG_PROPERTY(stackSize)
-        _CSOCKS_OUT_CONFIG_PROPERTY(memlock)
-        _CSOCKS_OUT_CONFIG_PROPERTY(maxOpenFiles)
-        _CSOCKS_OUT_CONFIG_PROPERTY(reuseAddress)
-        _CSOCKS_OUT_CONFIG_PROPERTY(tcpNodelay)
-        _CSOCKS_OUT_CONFIG_PROPERTY(backlog)
+        _TABOO_OUT_CONFIG_OPTION(manageHost)
+        _TABOO_OUT_CONFIG_OPTION(managePort)
+        _TABOO_OUT_CONFIG_OPTION(queryHost)
+        _TABOO_OUT_CONFIG_OPTION(queryPort)
+        _TABOO_OUT_CONFIG_OPTION(pidFile)
+        _TABOO_OUT_CONFIG_OPTION(queryWorkers)
+        _TABOO_OUT_CONFIG_OPTION(stackSize)
+        _TABOO_OUT_CONFIG_OPTION(memlock)
+        _TABOO_OUT_CONFIG_OPTION(maxOpenFiles)
+        _TABOO_OUT_CONFIG_OPTION(reuseAddress)
+        _TABOO_OUT_CONFIG_OPTION(tcpNodelay)
+        _TABOO_OUT_CONFIG_OPTION(backlog)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(manageConnectionMemoryLimit)
-        _CSOCKS_OUT_CONFIG_PROPERTY(manageConnectionReadBuffer)
-        _CSOCKS_OUT_CONFIG_PROPERTY(maxManageConnections)
-        _CSOCKS_OUT_CONFIG_PROPERTY(maxQueryConnections)
+        _TABOO_OUT_CONFIG_OPTION(manageConnectionMemoryLimit)
+        _TABOO_OUT_CONFIG_OPTION(manageConnectionReadBuffer)
+        _TABOO_OUT_CONFIG_OPTION(maxManageConnections)
+        _TABOO_OUT_CONFIG_OPTION(maxQueryConnections)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(queryRecvTimeout)
-        _CSOCKS_OUT_CONFIG_PROPERTY(querySendTimeout)
-        _CSOCKS_OUT_CONFIG_PROPERTY(manageRecvTimeout)
-        _CSOCKS_OUT_CONFIG_PROPERTY(manageSendTimeout)
+        _TABOO_OUT_CONFIG_OPTION(queryRecvTimeout)
+        _TABOO_OUT_CONFIG_OPTION(querySendTimeout)
+        _TABOO_OUT_CONFIG_OPTION(manageRecvTimeout)
+        _TABOO_OUT_CONFIG_OPTION(manageSendTimeout)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(connectionMaxIdle)
-        _CSOCKS_OUT_CONFIG_PROPERTY(connectionCheckInterval)
+        _TABOO_OUT_CONFIG_OPTION(connectionMaxIdle)
+        _TABOO_OUT_CONFIG_OPTION(connectionCheckInterval)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(itemsAllocStep)
-        _CSOCKS_OUT_CONFIG_PROPERTY(maxItems)
+        _TABOO_OUT_CONFIG_OPTION(itemsAllocStep)
+        _TABOO_OUT_CONFIG_OPTION(maxItems)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(maxIterations)
-        _CSOCKS_OUT_CONFIG_PROPERTY(maxMatches)
-        _CSOCKS_OUT_CONFIG_PROPERTY(defaultMatches)
+        _TABOO_OUT_CONFIG_OPTION(maxIterations)
+        _TABOO_OUT_CONFIG_OPTION(maxMatches)
+        _TABOO_OUT_CONFIG_OPTION(defaultMatches)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(checkSign)
-        _CSOCKS_OUT_CONFIG_PROPERTY(manageKey)
-        _CSOCKS_OUT_CONFIG_PROPERTY(manageSecret)
-        _CSOCKS_OUT_CONFIG_PROPERTY(signHyphen)
-        _CSOCKS_OUT_CONFIG_PROPERTY(signDelimiter)
-        _CSOCKS_OUT_CONFIG_PROPERTY(keyManageKey)
-        _CSOCKS_OUT_CONFIG_PROPERTY(keySign)
+        _TABOO_OUT_CONFIG_OPTION(checkSign)
+        _TABOO_OUT_CONFIG_OPTION(manageKey)
+        _TABOO_OUT_CONFIG_OPTION(manageSecret)
+        _TABOO_OUT_CONFIG_OPTION(signHyphen)
+        _TABOO_OUT_CONFIG_OPTION(signDelimiter)
+        _TABOO_OUT_CONFIG_OPTION(keyManageKey)
+        _TABOO_OUT_CONFIG_OPTION(keySign)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(keyId)
-        _CSOCKS_OUT_CONFIG_PROPERTY(keyPrefixes)
-        _CSOCKS_OUT_CONFIG_PROPERTY(keyPrefix)
-        _CSOCKS_OUT_CONFIG_PROPERTY(keyFilters)
-        _CSOCKS_OUT_CONFIG_PROPERTY(keyExcludes)
-        _CSOCKS_OUT_CONFIG_PROPERTY(keyFields)
-        _CSOCKS_OUT_CONFIG_PROPERTY(keyNum)
+        _TABOO_OUT_CONFIG_OPTION(keyId)
+        _TABOO_OUT_CONFIG_OPTION(keyPrefixes)
+        _TABOO_OUT_CONFIG_OPTION(keyPrefix)
+        _TABOO_OUT_CONFIG_OPTION(keyFilters)
+        _TABOO_OUT_CONFIG_OPTION(keyExcludes)
+        _TABOO_OUT_CONFIG_OPTION(keyFields)
+        _TABOO_OUT_CONFIG_OPTION(keyNum)
 
-        _CSOCKS_OUT_CONFIG_PROPERTY(prefixMinLen)
-        _CSOCKS_OUT_CONFIG_PROPERTY(prefixMaxLen)
+        _TABOO_OUT_CONFIG_OPTION(prefixMinLen)
+        _TABOO_OUT_CONFIG_OPTION(prefixMaxLen)
     );
 }
 
@@ -361,7 +396,8 @@ template<typename T> T Config::to(const std::string& name) const
     try {
         return options[name].as<T>();
     } catch (const std::exception& e) {
-        throw std::logic_error("bad config value for '" + name + "'" + (noFile ? "" : (", config file: '" + file.string() + "'")));
+        throw std::logic_error("bad config value for '" + name + "'"
+            + (noFile ? "" : (", config file: '" + file.string() + "'")));
     }
 }
 
@@ -369,7 +405,11 @@ template<typename IntType> IntType Config::toInteger(const std::string& name) co
 {
     const std::string value = to<std::string>(name);
     if (value.empty()) {
-        throw std::logic_error("config value for '" + name + "' can not be empty");
+        throw std::logic_error("config value for '" + name + "' must not be empty");
+    }
+    if (*value.begin() == '-' && 0 < static_cast<IntType>(-1)) {
+        throw std::logic_error("config value for '" + name
+            + "' must be positive integer, but got '" + value + "'");
     }
     int unit = *value.rbegin();
     int bits = 0;
@@ -394,14 +434,13 @@ template<typename IntType> IntType Config::toInteger(const std::string& name) co
     if (!(num < max)) {
         throw std::logic_error("config value for '" + name + "' out of bound: '" + value + "'");
     }
-    if (num < 0 && 0 < static_cast<IntType>(-1)) {
-        throw std::logic_error("config '" + name + " requires ' positive integer, but got '" + value + "'");
-    }
     return num << bits;
 }
 
 Config* Config::_instance = NULL;
 
+boost::mutex Config::configLoadMutex;
+
 }
 
-#undef _CSOCKS_OUT_CONFIG_PROPERTY
+#undef _TABOO_OUT_CONFIG_OPTION
