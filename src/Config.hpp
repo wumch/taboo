@@ -27,12 +27,15 @@ private:
 
     void initDesc();
 
-    void load(const boost::filesystem::path& file);
+    void loadFile();
 
-    void loadOptions(const boost::filesystem::path& file);
+    void loadOptions();
 
-    template<typename IntType> IntType toInteger(const std::string& str) const;
+    template<typename IntType> IntType toInteger(const std::string& name) const;
+    template<typename T> T to(const std::string& name) const;
 
+    bool noFile;
+    boost::filesystem::path file;
     boost::program_options::variables_map options;
     boost::program_options::options_description desc;
 
@@ -46,6 +49,7 @@ public:
 
     boost::filesystem::path pidFile;
 
+    bool storeOnExit, restoreOnStart;
     boost::filesystem::path trieFile, itemsFile;
 
     std::string manageHost, queryHost;
@@ -58,7 +62,7 @@ public:
     bool memlock;
     bool reuseAddress;
     bool tcpNodelay;
-    std::size_t backlog;
+    uint32_t backlog;
 
     std::size_t maxManageConnections;
     std::size_t maxQueryConnections;
@@ -74,9 +78,11 @@ public:
 
     uint32_t maxIterations, maxMatches, defaultMatches;
 
+    bool checkSign;
     std::string manageKey, manageSecret, signHyphen, signDelimiter;
 
-    std::string keySign, keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum;
+    std::string keySign, keyManageKey,
+        keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum;
 };
 
 }

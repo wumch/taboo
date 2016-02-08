@@ -38,7 +38,9 @@ void Config::init(int argc, char* argv[])
         ("config,c", boost::program_options::value<boost::filesystem::path>()->default_value(defaultConfig),
             ("config file, default " + defaultConfig.string() + ".").c_str())
         ("no-config-file", boost::program_options::bool_switch()->default_value(false),
-            "force do not load options from config file, default false.");
+            "force do not load options from config file, default false.")
+        ("test-config,t", boost::program_options::bool_switch()->default_value(false),
+            "test config options and exit.");
     initDesc();
 
     try
@@ -49,22 +51,26 @@ void Config::init(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        CS_DIE(e.what() << CS_LINESEP << desc);
+        throw std::runtime_error(std::string(e.what()) + CS_LINESEP + boost::lexical_cast<std::string>(desc));
     }
     boost::program_options::notify(options);
 
-    if (options.count("help"))
-    {
+    if (options.count("help")) {
         std::cout << desc << std::endl;
         std::exit(EXIT_SUCCESS);
-    }
-    else
-    {
-        bool noConfigFile = options["no-config-file"].as<bool>();
-        if (!noConfigFile)
-        {
-            load(options["config"].as<boost::filesystem::path>());
+    } else {
+        noFile = to<bool>("no-config-file");
+        if (noFile) {
+            loadOptions();
+        } else {
+            file = to<boost::filesystem::path>("config");
+            loadFile();
         }
+    }
+
+    if (options.count("test-config")) {
+        CS_ECHO(CS_OC_GREEN("config " << (file.empty() ? "" : (std::string("file '") + file.string() + "'")) << " is ok."));
+        std::exit(EXIT_SUCCESS);
     }
 }
 
@@ -72,14 +78,21 @@ void Config::initDesc()
 {
     boost::filesystem::path defaultPidFile("/var/run/" + programName + ".pid");
     boost::filesystem::path defaultStorePath("/var/lib/" + programName + "/");
+    boost::filesystem::path defaultTrieFile = defaultStorePath.string() + "trie.dat";
+    boost::filesystem::path defaultItemsFile = defaultStorePath.string() + "items.dat";
     std::string lanIp = stage::getLanIP();
     desc.add_options()
         ("pid-file", boost::program_options::value<boost::filesystem::path>()->default_value(defaultPidFile),
             ("pid file, default" + defaultPidFile.string() + ".").c_str())
 
-        ("trie-file", boost::program_options::value<boost::filesystem::path>()->default_value(defaultPidFile),
+        ("store-on-exit", boost::program_options::bool_switch()->default_value(true),
+            "store trie/items into 'trie-file'/'items-file' before exit or not, default is yes")
+        ("restore-on-start", boost::program_options::bool_switch()->default_value(true),
+            "restore trie/items from 'trie-file'/'items-file' when startup or not, default is yes")
+
+        ("trie-file", boost::program_options::value<boost::filesystem::path>()->default_value(defaultTrieFile),
             ("file to store trie, default" + defaultStorePath.string() + "trie.dat").c_str())
-        ("items-file", boost::program_options::value<boost::filesystem::path>()->default_value(defaultPidFile),
+        ("items-file", boost::program_options::value<boost::filesystem::path>()->default_value(defaultItemsFile),
             ("file to store items, default" + defaultStorePath.string() + "items.dat").c_str())
 
         ("manage-host", boost::program_options::value<std::string>()->default_value(lanIp),
@@ -107,7 +120,7 @@ void Config::initDesc()
             "whether reuse-address on startup or not, default on.")
         ("tcp-nodelay", boost::program_options::bool_switch()->default_value(true),
             "enables tcp-nodelay feature or not, default on.")
-        ("listen-backlog", boost::program_options::value<std::string>()->default_value("1k"),
+        ("listen-backlog", boost::program_options::value<std::string>()->default_value("1K"),
             "listen backlog, default is 1K.")
 
         ("manage-connection-memory-limit", boost::program_options::value<std::string>()->default_value("256K"),
@@ -150,15 +163,19 @@ void Config::initDesc()
         ("default-matches", boost::program_options::value<std::string>()->default_value(("10")),
             "default count of items to match for query, default is 10.")
 
+        ("check-signature", boost::program_options::bool_switch()->default_value(true),
+            "check signature or not for manage requests, default is yes.")
         ("manage-key", boost::program_options::value<std::string>(),
-            "access key for manage.")
+            "access key for manage, REQUIRED when 'check-signature'=yes.")
         ("manage-secret", boost::program_options::value<std::string>(),
-            "access secret for manage.")
+            "access secret for manage, REQUIRED when 'check-signature'=yes.")
         ("sign-hyphen", boost::program_options::value<std::string>()->default_value("="),
-            "string for join key and value when generating signature, default is '='.")
+            "glue for join key and value when generating signature, default is '='.")
         ("sign-delimiter", boost::program_options::value<std::string>()->default_value("&"),
-            "string for join key-value pairs when generate signature, default is '&'.")
+            "glue for join key-value pairs when generate signature, default is '&'.")
 
+        ("key-manage-key", boost::program_options::value<std::string>()->default_value(("key")),
+            "key name for 'manage-key' of manage requests, default is 'key'.")
         ("key-sign", boost::program_options::value<std::string>()->default_value(("sign")),
             "key name for 'sign' of manage requests, default is 'sign'.")
         ("key-id", boost::program_options::value<std::string>()->default_value(("id")),
@@ -169,98 +186,105 @@ void Config::initDesc()
         ("key-prefix", boost::program_options::value<std::string>()->default_value(("prefix")),
             "key name for 'prefix' of query, default is 'prefix'.")
         ("key-filters", boost::program_options::value<std::string>()->default_value(("filters")),
-            "key name for 'filters'' of query, default is 'filters'.")
+            "key name for 'filters' of query, default is 'filters'.")
         ("key-excludes", boost::program_options::value<std::string>()->default_value(("excludes")),
-            "key name for 'excludes'' of query, default is 'excludes'.")
+            "key name for 'excludes' of query, default is 'excludes'.")
         ("key-fields", boost::program_options::value<std::string>()->default_value(("fields")),
-            "key name for 'fields'' of query, default is 'fields'.")
+            "key name for 'fields' of query, default is 'fields'.")
         ("key-num", boost::program_options::value<std::string>()->default_value(("num")),
             "key name for 'num' of query, default is 'num'.")
     ;
 }
 
-void Config::load(const boost::filesystem::path& file)
+void Config::loadFile()
 {
     try {
         boost::program_options::store(boost::program_options::parse_config_file<char>(file.c_str(), desc), options);
     } catch (const std::exception& e) {
         boost::system::error_code err;
         boost::filesystem::path path = boost::filesystem::canonical(file, err);
-        CS_DIE("faild on load config-file: " << (err ? file : path) << "\n" << CS_OC_RED(e.what()));
+        throw std::runtime_error("faild on load config-file: " + (err ? file : path).string() + CS_LINESEP_STR + e.what());
     }
     boost::program_options::notify(options);
 
     try {
-        loadOptions(file);
+        loadOptions();
     } catch (const std::exception& e) {
-        CS_DIE("failed on load config options: " << CS_OC_RED(e.what()));
+        throw std::runtime_error("failed on load config options: " + std::string(e.what()));
     }
 }
 
-void Config::loadOptions(const boost::filesystem::path& file)
+void Config::loadOptions()
 {
-    pidFile = options["pid-file"].as<boost::filesystem::path>();
+    pidFile = to<boost::filesystem::path>("pid-file");
 
-    trieFile = options["trie-file"].as<boost::filesystem::path>();
-    itemsFile = options["items-file"].as<boost::filesystem::path>();
+    storeOnExit = to<bool>("store-on-exit");
+    restoreOnStart = to<bool>("restore-on-start");
 
-    manageHost = options["manage-host"].as<std::string>();
-    managePort = options["manage-port"].as<uint16_t>();
-    queryHost = options["query-host"].as<std::string>();
-    queryPort = options["query-port"].as<uint16_t>();
+    trieFile = to<boost::filesystem::path>("trie-file");
+    itemsFile = to<boost::filesystem::path>("items-file");
 
-    manageWorkers = toInteger<uint32_t>(options["manage-workers"].as<std::string>());
-    queryWorkers = toInteger<uint32_t>(options["query-workers"].as<std::string>());
+    manageHost = to<std::string>("manage-host");
+    managePort = to<uint16_t>("manage-port");
+    queryHost = to<std::string>("query-host");
+    queryPort = to<uint16_t>("query-port");
 
-    stackSize = toInteger<std::size_t>(options["stack-size"].as<std::string>());
-    maxOpenFiles = toInteger<std::size_t>(options["max-open-files"].as<std::string>());
-    memlock = options["memlock"].as<bool>();
-    reuseAddress = options["reuse-address"].as<bool>();
-    tcpNodelay = options["tcp-nodelay"].as<bool>();
-    backlog = toInteger<uint32_t>(options["listen-backlog"].as<std::string>());
+    manageWorkers = toInteger<uint32_t>("manage-workers");
+    queryWorkers = toInteger<uint32_t>("query-workers");
 
-    manageConnectionMemoryLimit = toInteger<std::size_t>(options["manage-connection-memory-limit"].as<std::string>());
-    manageConnectionReadBuffer = toInteger<std::size_t>(options["manage-connection-read-buffer"].as<std::string>());
-    maxManageConnections = toInteger<std::size_t>(options["max-manage-connections"].as<std::string>());
-    maxQueryConnections = toInteger<std::size_t>(options["max-query-connections"].as<std::string>());
+    stackSize = toInteger<std::size_t>("stack-size");
+    maxOpenFiles = toInteger<std::size_t>("max-open-files");
+    memlock = to<bool>("memlock");
+    reuseAddress = to<bool>("reuse-address");
+    tcpNodelay = to<bool>("tcp-nodelay");
+    backlog = toInteger<uint32_t>("listen-backlog");
 
-    manageRecvTimeout = options["manage-receive-timeout"].as<std::time_t>();
-    manageSendTimeout = options["manage-send-timeout"].as<std::time_t>();
-    queryRecvTimeout = options["query-receive-timeout"].as<std::time_t>();
-    querySendTimeout = options["query-send-timeout"].as<std::time_t>();
+    manageConnectionMemoryLimit = toInteger<std::size_t>("manage-connection-memory-limit");
+    manageConnectionReadBuffer = toInteger<std::size_t>("manage-connection-read-buffer");
+    maxManageConnections = toInteger<std::size_t>("max-manage-connections");
+    maxQueryConnections = toInteger<std::size_t>("max-query-connections");
 
-    connectionMaxIdle = options["connection-max-idle"].as<std::time_t>();
-    connectionCheckInterval = options["connection-check-interval"].as<std::time_t>();
+    manageRecvTimeout = to<std::time_t>("manage-receive-timeout");
+    manageSendTimeout = to<std::time_t>("manage-send-timeout");
+    queryRecvTimeout = to<std::time_t>("query-receive-timeout");
+    querySendTimeout = to<std::time_t>("query-send-timeout");
 
-    itemsAllocStep = toInteger<std::size_t>(options["items-allocate-step"].as<std::string>());
-    maxItems = toInteger<std::size_t>(options["max-items"].as<std::string>());
+    connectionMaxIdle = to<std::time_t>("connection-max-idle");
+    connectionCheckInterval = to<std::time_t>("connection-check-interval");
 
-    prefixMinLen = options["prefix-min-length"].as<uint32_t>();
-    prefixMaxLen = options["prefix-max-length"].as<uint32_t>();
+    itemsAllocStep = toInteger<std::size_t>("items-allocate-step");
+    maxItems = toInteger<std::size_t>("max-items");
 
-    maxIterations = toInteger<uint32_t>(options["max-iterations"].as<std::string>());
-    maxMatches = toInteger<uint32_t>(options["max-matches"].as<std::string>());
-    defaultMatches = toInteger<uint32_t>(options["default-matches"].as<std::string>());
+    prefixMinLen = to<uint32_t>("prefix-min-length");
+    prefixMaxLen = to<uint32_t>("prefix-max-length");
+
+    maxIterations = toInteger<uint32_t>("max-iterations");
+    maxMatches = toInteger<uint32_t>("max-matches");
+    defaultMatches = toInteger<uint32_t>("default-matches");
 
     if (options.find("manage-key") == options.end()) {
-        CS_DIE("config option 'manage-key' is required");
+        throw std::logic_error("config option 'manage-key' is required");
     }
     if (options.find("manage-secret") == options.end()) {
-        CS_DIE("config option 'manage-secret' is required");
+        throw std::logic_error("config option 'manage-secret' is required");
     }
-    manageKey = options["manage-key"].as<std::string>();
-    manageSecret = options["manage-secret"].as<std::string>();
-    signHyphen = options["sign-hyphen"].as<std::string>();
-    signDelimiter = options["sign-delimiter"].as<std::string>();
+    checkSign = to<bool>("check-signature");
+    if (checkSign) {
+        manageKey = to<std::string>("manage-key");
+        manageSecret = to<std::string>("manage-secret");
+    }
+    signHyphen = to<std::string>("sign-hyphen");
+    signDelimiter = to<std::string>("sign-delimiter");
 
-    keySign = options["key-sign"].as<std::string>();
-    keyId = options["key-id"].as<std::string>();
-    keyPrefixes = options["key-prefixes"].as<std::string>();
-    keyPrefix = options["key-prefix"].as<std::string>();
-    keyFilters = options["key-filters"].as<std::string>();
-    keyExcludes = options["key-excludes"].as<std::string>();
-    keyFields = options["key-fields"].as<std::string>();
-    keyNum = options["key-num"].as<std::string>();
+    keyManageKey = to<std::string>("key-manage-key");
+    keySign = to<std::string>("key-sign");
+    keyId = to<std::string>("key-id");
+    keyPrefixes = to<std::string>("key-prefixes");
+    keyPrefix = to<std::string>("key-prefix");
+    keyFilters = to<std::string>("key-filters");
+    keyExcludes = to<std::string>("key-excludes");
+    keyFields = to<std::string>("key-fields");
+    keyNum = to<std::string>("key-num");
 
 #if CS_DEBUG
     boost::system::error_code err;
@@ -270,6 +294,14 @@ void Config::loadOptions(const boost::filesystem::path& file)
         "loaded configs in [" << (err ? file : path) << "]:" << std::endl
 
         _CSOCKS_OUT_CONFIG_PROPERTY(programName)
+        _CSOCKS_OUT_CONFIG_PROPERTY(file)
+        _CSOCKS_OUT_CONFIG_PROPERTY(pidFile)
+
+        _CSOCKS_OUT_CONFIG_PROPERTY(storeOnExit)
+        _CSOCKS_OUT_CONFIG_PROPERTY(restoreOnStart)
+        _CSOCKS_OUT_CONFIG_PROPERTY(trieFile)
+        _CSOCKS_OUT_CONFIG_PROPERTY(itemsFile)
+
         _CSOCKS_OUT_CONFIG_PROPERTY(manageHost)
         _CSOCKS_OUT_CONFIG_PROPERTY(managePort)
         _CSOCKS_OUT_CONFIG_PROPERTY(queryHost)
@@ -303,10 +335,12 @@ void Config::loadOptions(const boost::filesystem::path& file)
         _CSOCKS_OUT_CONFIG_PROPERTY(maxMatches)
         _CSOCKS_OUT_CONFIG_PROPERTY(defaultMatches)
 
+        _CSOCKS_OUT_CONFIG_PROPERTY(checkSign)
         _CSOCKS_OUT_CONFIG_PROPERTY(manageKey)
         _CSOCKS_OUT_CONFIG_PROPERTY(manageSecret)
         _CSOCKS_OUT_CONFIG_PROPERTY(signHyphen)
         _CSOCKS_OUT_CONFIG_PROPERTY(signDelimiter)
+        _CSOCKS_OUT_CONFIG_PROPERTY(keyManageKey)
         _CSOCKS_OUT_CONFIG_PROPERTY(keySign)
 
         _CSOCKS_OUT_CONFIG_PROPERTY(keyId)
@@ -322,9 +356,22 @@ void Config::loadOptions(const boost::filesystem::path& file)
     );
 }
 
-template<typename IntType> IntType Config::toInteger(const std::string& str) const
+template<typename T> T Config::to(const std::string& name) const
 {
-    int unit = *str.rbegin();
+    try {
+        return options[name].as<T>();
+    } catch (const std::exception& e) {
+        throw std::logic_error("bad config value for '" + name + "'" + (noFile ? "" : (", config file: '" + file.string() + "'")));
+    }
+}
+
+template<typename IntType> IntType Config::toInteger(const std::string& name) const
+{
+    const std::string value = to<std::string>(name);
+    if (value.empty()) {
+        throw std::logic_error("config value for '" + name + "' can not be empty");
+    }
+    int unit = *value.rbegin();
     int bits = 0;
     if (std::isalpha(unit)) {
         char u = std::tolower(unit);
@@ -336,19 +383,19 @@ template<typename IntType> IntType Config::toInteger(const std::string& str) con
         default: bits = -1; break;
         }
     } else {
-        return boost::lexical_cast<IntType>(str);
+        return boost::lexical_cast<IntType>(value);
     }
     if (bits == -1) {
-        throw std::logic_error("bad value: " + str);
+        throw std::logic_error("bad config value '" + value + "' for '" + name + "'");
     }
-    IntType num = boost::lexical_cast<IntType>(str.substr(0, str.length() - 1));
+    IntType num = boost::lexical_cast<IntType>(value.substr(0, value.length() - 1));
     int bitsRemain = sizeof(IntType) - bits;
     IntType max = 1 << bitsRemain;
     if (!(num < max)) {
-        throw std::logic_error("value out of bound: " + str);
+        throw std::logic_error("config value for '" + name + "' out of bound: '" + value + "'");
     }
     if (num < 0 && 0 < static_cast<IntType>(-1)) {
-        throw std::logic_error("positive value required, but got " + str);
+        throw std::logic_error("config '" + name + " requires ' positive integer, but got '" + value + "'");
     }
     return num << bits;
 }
