@@ -85,7 +85,7 @@ public:
     bool checkSign;
     std::string manageKey, manageSecret, signHyphen, signDelimiter;
 
-    std::string keySign, keyManageKey,
+    std::string keyManageKey, keySign, keyItem,
         keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum;
 };
 

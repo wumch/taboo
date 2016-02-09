@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include <exception>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -20,13 +20,13 @@ namespace taboo
 
 bool Config::initialize(int argc, char* argv[])
 {
-    typedef boost::shared_ptr<Config> ConfigPtr;
+    typedef std::auto_ptr<Config> ConfigPtr;
     {
         try {
             boost::mutex::scoped_lock lock(configLoadMutex);
             ConfigPtr ptr(new Config);
             ptr->init(argc, argv);
-            _instance = ptr.get();
+            _instance = ptr.release();
         } catch (const std::logic_error& e) {
             CS_DIE("error: " << e.what());
         } catch (const std::runtime_error& e) {
@@ -212,21 +212,23 @@ void Config::initDesc()
             "key name for 'manage-key' of manage requests, default is 'key'.")
         ("key-sign", boost::program_options::value<std::string>()->default_value(("sign")),
             "key name for 'sign' of manage requests, default is 'sign'.")
-        ("key-id", boost::program_options::value<std::string>()->default_value(("id")),
-            "key name for 'id' of items, default is 'id'.")
+        ("key-item", boost::program_options::value<std::string>()->default_value(("item")),
+            "key name for 'item' of manage requests, default is 'item'.")
         ("key-prefixes", boost::program_options::value<std::string>()->default_value(("prefixes")),
             "key name for 'prefixes' of items in manage requests, default is 'prefixes'.")
+        ("key-id", boost::program_options::value<std::string>()->default_value(("id")),
+            "key name for 'id' of items, default is 'id'.")
 
         ("key-prefix", boost::program_options::value<std::string>()->default_value(("prefix")),
-            "key name for 'prefix' of query, default is 'prefix'.")
+            "key name for 'prefix' of query requests, default is 'prefix'.")
         ("key-filters", boost::program_options::value<std::string>()->default_value(("filters")),
-            "key name for 'filters' of query, default is 'filters'.")
+            "key name for 'filters' of query requests, default is 'filters'.")
         ("key-excludes", boost::program_options::value<std::string>()->default_value(("excludes")),
-            "key name for 'excludes' of query, default is 'excludes'.")
+            "key name for 'excludes' of query requests, default is 'excludes'.")
         ("key-fields", boost::program_options::value<std::string>()->default_value(("fields")),
-            "key name for 'fields' of query, default is 'fields'.")
+            "key name for 'fields' of query requests, default is 'fields'.")
         ("key-num", boost::program_options::value<std::string>()->default_value(("num")),
-            "key name for 'num' of query, default is 'num'.")
+            "key name for 'num' of query requests, default is 'num'.")
     ;
 }
 
@@ -313,8 +315,10 @@ void Config::loadOptions()
 
     keyManageKey = to<std::string>("key-manage-key");
     keySign = to<std::string>("key-sign");
-    keyId = to<std::string>("key-id");
+    keyItem = to<std::string>("key-item");
     keyPrefixes = to<std::string>("key-prefixes");
+    keyId = to<std::string>("key-id");
+
     keyPrefix = to<std::string>("key-prefix");
     keyFilters = to<std::string>("key-filters");
     keyExcludes = to<std::string>("key-excludes");
@@ -377,8 +381,9 @@ void Config::loadOptions()
         _TABOO_OUT_CONFIG_OPTION(signDelimiter)
         _TABOO_OUT_CONFIG_OPTION(keyManageKey)
         _TABOO_OUT_CONFIG_OPTION(keySign)
-
+        _TABOO_OUT_CONFIG_OPTION(keyItem)
         _TABOO_OUT_CONFIG_OPTION(keyId)
+
         _TABOO_OUT_CONFIG_OPTION(keyPrefixes)
         _TABOO_OUT_CONFIG_OPTION(keyPrefix)
         _TABOO_OUT_CONFIG_OPTION(keyFilters)

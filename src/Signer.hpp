@@ -17,6 +17,10 @@ private:
     std::size_t len;
 
 public:
+    StrRef():
+        _data(NULL), len(0)
+    {}
+
     explicit StrRef(const char* __data, std::size_t _len):
         _data(__data), len(_len)
     {}
@@ -36,6 +40,22 @@ public:
         return size();
     }
 };
+
+inline bool operator<(const StrRef& lhs, const StrRef& rhs)
+{
+    int nres = std::strncmp(lhs.data(), rhs.data(), std::min(lhs.length(), rhs.length()));
+    return (nres == 0) ? lhs.length() < rhs.length() : (nres == -1);
+}
+
+inline bool operator==(const std::string& str, const StrRef& ref)
+{
+    return str.length() == ref.length() && !std::strncmp(str.data(), ref.data(), ref.length());
+}
+
+inline bool operator==(const StrRef& ref, const std::string& str)
+{
+    return str == ref;
+}
 
 namespace
 {

@@ -31,8 +31,8 @@ public:
         bool attached = false;
         for (KeyList::const_iterator it = keys.begin(); it != keys.end(); ++it)
         {
-            std::size_t node_pos = 0, key_pos = 0;
-            id_t slotId = da.traverse(it->data(), node_pos, key_pos, it->length());
+            std::size_t nodePos = 0, keyPos = 0;
+            id_t slotId = da.traverse(it->data(), nodePos, keyPos, it->length());
             if (slotId == no_value || slotId == no_path) {
                 slotId = da.update(it->data(), it->length(), id);
                 attached = true;
@@ -61,21 +61,21 @@ public:
     template<typename Callback>
     void traverse(const std::string& key, Callback& cb) const
     {
-        std::size_t node_pos = 0, key_pos = 0;
-        id_t id = da.traverse(key.data(), node_pos, key_pos, key.length());
+        std::size_t nodePos = 0, keyPos = 0;
+        id_t id = da.traverse(key.data(), nodePos, keyPos, key.length());
         if (id != no_path) {
             if (id != no_value) {
                 if (!cb(id)) {
                     return;
                 }
             }
-            std::size_t root = node_pos;
-            id = da.begin(node_pos, key_pos);
+            std::size_t root = nodePos;
+            id = da.begin(nodePos, keyPos);
             while (id != no_path) {
                 if (!cb(id)) {
                     return;
                 }
-                id = da.next(node_pos, key_pos, root);
+                id = da.next(nodePos, keyPos, root);
             }
         }
     }
