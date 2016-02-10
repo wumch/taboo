@@ -7,7 +7,7 @@ namespace taboo {
 namespace manager {
 
 class StatusHandler:
-    public BaseHandler
+    public BaseHandler, public taboo::HandlerCreator<StatusHandler>
 {
 public:
     virtual ResPtr deal() const

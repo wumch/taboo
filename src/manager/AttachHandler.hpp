@@ -7,7 +7,7 @@ namespace taboo {
 namespace manager {
 
 class AttachHandler:
-    public BaseHandler
+    public BaseHandler, public taboo::HandlerCreator<AttachHandler>
 {
 protected:
     enum {

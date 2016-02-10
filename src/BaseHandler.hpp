@@ -2,6 +2,7 @@
 #pragma once
 
 #include "predef.hpp"
+#include <memory>
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
@@ -91,6 +92,11 @@ public:
         return true;
     }
 
+    bool isPost() const     // todo: wired with WebSocket requests
+    {
+        return method == methodPost;
+    }
+
     virtual bool addGetParam(const char* key, const char* value)
     {
         return addParam(key, value, std::strlen(value));
@@ -109,6 +115,7 @@ protected:
     virtual bool addParam(const char* key, const char* value, std::size_t valueLength)
     {
         params.insert(std::make_pair(std::string(key), std::string(value, valueLength)));
+        return true;
     }
 
     std::string quote(const std::string& str) const
@@ -153,6 +160,19 @@ protected:
     }
 };
 
+typedef std::auto_ptr<BaseHandler> HandlerPtr;
+
+template<typename HandlerType>
+class HandlerCreator
+{
+public:
+    static HandlerPtr create()
+    {
+        HandlerPtr handler(new HandlerType);
+        return handler;
+    }
+};
+
 class NoRouteHandler:
     public BaseHandler
 {
@@ -168,6 +188,12 @@ public:
     virtual ReplyPtr process()
     {
         return reply;
+    }
+
+protected:
+    virtual bool addParam(const char* key, const char* value, std::size_t valueLength)
+    {
+        return true;
     }
 };
 

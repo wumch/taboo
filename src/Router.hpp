@@ -2,7 +2,6 @@
 #pragma once
 
 #include "predef.hpp"
-#include "manager/AttachHandler.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/lexical_cast.hpp>
@@ -11,13 +10,14 @@
 
 namespace taboo {
 
+typedef HandlerPtr (*HandlerCreatorFunc)();
+
 class Router
 {
 private:
     static Router* _instance;
 
-    typedef boost::shared_ptr<BaseHandler> HandlerPtr;
-    typedef boost::unordered_map<std::string, HandlerPtr> HandlerMap;
+    typedef boost::unordered_map<std::string, HandlerCreatorFunc> HandlerMap;
 
     enum {
         err_no_route = 101,
@@ -52,7 +52,9 @@ public:
         if (it == handlerMap.end()) {
             return noRouteHandler;
         }
-        return it->second;
+        HandlerPtr handler = (it->second)();
+        handler->setMeta(method, uri);
+        return handler;
     }
 
 protected:
