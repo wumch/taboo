@@ -61,6 +61,10 @@ protected:
         Res():
             code(err_unknown)
         {}
+
+        explicit Res(ec_t errCode):
+            code(errCode)
+        {}
     };
     typedef boost::shared_ptr<Res> ResPtr;
 
@@ -74,17 +78,17 @@ protected:
 
 public:
     BaseHandler():
-        config(Config::instance()), escapedQuotation("\\\""),
+        escapedQuotation("\\\""), config(Config::instance()),
         methodGet("GET"), methodPost("POST")
     {}
 
     virtual bool setMeta(const std::string& _method, const std::string& _uri)
     {
-        if (CS_BUNLIKELY(method.empty() || uri.empty())) {
+        if (CS_BUNLIKELY(_method.empty() || _uri.empty())) {
             return false;
         }
         method = _method;
-        if (*uri.rbegin() == '/') {
+        if (*_uri.rbegin() == '/') {
             uri = _uri.substr(0, _uri.length() - 1);
         } else {
             uri = _uri;
@@ -142,12 +146,12 @@ protected:
         res.reserve(9 + 10 + config->keyErrCode.length()
             + config->keyErrDesc.length() + errDesc.length());
         res += "{\"";
-        res += Aside::instance()->keyErrCode;
+        res += config->keyErrCode;
         res += "\":";
         res += boost::lexical_cast<std::string>(errCode);
         if (!errDesc.empty()) {
             res += ",\"";
-            res += Aside::instance()->keyErrDesc;
+            res += config->keyErrDesc;
             res += "\":\"";
             if (errDesc.find('"') == errDesc.npos) {
                 res += errDesc;
@@ -174,7 +178,7 @@ public:
 };
 
 class NoRouteHandler:
-    public BaseHandler
+    public BaseHandler, public HandlerCreator<NoRouteHandler>
 {
 private:
     const ReplyPtr reply;
@@ -182,7 +186,7 @@ private:
 public:
     NoRouteHandler():
         reply(genReply(err_no_route, "{\"" + config->keyErrCode + "\":"
-            + boost::lexical_cast<std::string>(err_no_route) + "\"}", mem_mode_persist))
+            + boost::lexical_cast<std::string, ec_t>(err_no_route) + "\"}", mem_mode_persist))
     {}
 
     virtual ReplyPtr process()

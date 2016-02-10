@@ -27,33 +27,37 @@ private:
 
     HandlerMap handlerMap;
 
-    const HandlerPtr noRouteHandler;
-
-    static Router* instance()
-    {
-        return _instance;
-    }
+    HandlerCreatorFunc noRouteHandlerCreator;
 
     Router():
         config(Config::instance()),
-        noRouteHandler(new NoRouteHandler)
+        noRouteHandlerCreator(&NoRouteHandler::create)
     {
         initHandlerMap();
     }
 
 public:
+    static Router* instance()
+    {
+        return _instance;
+    }
+
     HandlerPtr route(const std::string& method, const std::string& uri) const
     {
-        HandlerMap::const_iterator it;
+        CS_DUMP(method);
+        CS_DUMP(uri);
         if (uri.empty()) {
-            return noRouteHandler;
+            return noRouteHandlerCreator();
         }
         HandlerMap::const_iterator it = handlerMap.find(uri);
         if (it == handlerMap.end()) {
-            return noRouteHandler;
+            CS_SAY("no route");
+            return noRouteHandlerCreator();
         }
+        CS_SAY("route succeed");
         HandlerPtr handler = (it->second)();
         handler->setMeta(method, uri);
+        CS_DUMP(handler->isPost());
         return handler;
     }
 

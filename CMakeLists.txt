@@ -2,25 +2,33 @@
 cmake_minimum_required(VERSION 2.8)
 project(taboo)
 
-include_directories(./libs ./libs/websocketpp ./libs/rapidjson/include)
+string(TOLOWER "${CMAKE_BUILD_TYPE}" cmake_build_type_lower)
+if (cmake_build_type_lower MATCHES "debug")
+    
+    if (DEFINED CS_DEBUG)
+    else()
+        set(CS_DEBUG 2)
+    endif()
+    
+    find_program(ccache_path ccache)
+    find_program(clang_path clang++)
+    if (clang_path)
+        set(CMAKE_CXX_COMPILER ${clang_path})
+    endif()
+    
+    add_compile_options(-O0 -g3 -DCS_DEBUG=${CS_DEBUG} -ferror-limit=5)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O0 -Wl,-as-needed")
+    
+else()
+    add_compile_options(-O3 -DNDEBUG)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O2 -Wl,-as-needed")
+endif()
 
-set(SOURCE_FILES    src/taboo.cpp 
-    src/Manager.cpp    src/Router.cpp 
-    src/Keeper.cpp    src/Item.cpp 
-    src/Aside.cpp    src/Config.cpp
+add_compile_options(-pthread -fomit-frame-pointer -pipe -fno-strict-aliasing -Wall -Wno-unused-local-typedef)
 
-    src/Manager.hpp    src/Router.hpp 
-    src/Seeker.hpp    src/Query.hpp
-    src/Farm.hpp    src/Trie.hpp    src/Filter.hpp    src/Item.hpp
-    src/manage/StatusHandler.hpp    src/manage/AttachHandler.hpp    src/manage/DetachHandler.hpp
-    src/manage/BaseHandler.hpp    src/BaseHandler.hpp
-    src/Aside.hpp    src/Config.hpp    src/predef.hpp)
-
-set(CMAKE_CXX_COMPILER clang++)
-set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -ferror-limit=5 -DCS_DEBUG=1 -O0 -ggdb -Wall -Wno-unused-local-typedef")
-SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -DNDEBUG -Wall -Wno-unused-local-typedef")
-#add_compile_options(-std=c++11)
+include_directories(libs libs/websocketpp libs/rapidjson/include)
 
 link_libraries(boost_system boost_chrono boost_program_options boost_filesystem boost_thread crypto microhttpd glog)
 
+file(GLOB_RECURSE SOURCE_FILES src/*.?pp)
 add_executable(taboo ${SOURCE_FILES})

@@ -48,7 +48,9 @@ public:
     {
         if (validate()) {
             prepare();
-            return _process();
+            ReplyPtr reply = _process();
+            CS_DUMP(reply->content);
+            return reply;
         } else {
             return errUnknownReply;
         }
@@ -59,11 +61,14 @@ public:
 protected:
     virtual bool addParam(const char* key, const char* value, const std::size_t valueLength)
     {
+        CS_DUMP(key);
+        CS_DUMP(value);
         if (key == Config::instance()->keySign) {
             sign = std::string(value, valueLength);
         } else {
             params.insert(std::make_pair(std::string(key), std::string(value, valueLength)));
         }
+        CS_SAY("a");
         return true;
     }
 
@@ -74,13 +79,17 @@ protected:
 
     virtual void prepare()
     {
+        if (config->checkSign) {
+            sign.clear();
+        }
         params.clear();
     }
 
     virtual ReplyPtr _process()
     {
         ResPtr reply = deal();
-        return reply ? reply : getResponse(reply->code);
+        return reply ? (reply->reply ? reply->reply : getResponse(reply->code))
+            : getResponse(err_unknown);
     }
 
     virtual ResPtr deal() const = 0;
@@ -121,7 +130,7 @@ protected:
         map.insert(std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
         fillReply(err_bad_request_method, "request method not allowed");
         fillReply(err_bad_request, "bad request");
-        fillReply(err_bad_sign, "bad sign");
+        fillReply(err_bad_sign, "bad \"s\"i\"agn");
         fillReply(err_bad_param, "bad param");
         _initReplys(map);
     }
@@ -129,7 +138,7 @@ protected:
     virtual void fillReply(ec_t errCode, const std::string& errDesc)
     {
         const_cast<ReplyPtrMap&>(replys).insert(std::make_pair(errCode,
-            genReply(err_bad_request_method, errDesc, mem_mode_persist)));
+            genReply(errCode, errDesc, mem_mode_persist)));
     }
 
     virtual void _initReplys(ReplyPtrMap& _replys) {}

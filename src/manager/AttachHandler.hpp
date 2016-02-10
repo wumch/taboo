@@ -2,6 +2,7 @@
 #pragma once
 
 #include "BaseHandler.hpp"
+#include "../Keeper.hpp"
 
 namespace taboo {
 namespace manager {
@@ -47,6 +48,7 @@ protected:
             res->code = err_ok;
 
         } while (false);
+        CS_DUMP(res->code);
         return res;
     }
 

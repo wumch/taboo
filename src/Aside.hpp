@@ -27,8 +27,8 @@ private:
 public:
     ItemPool itemPool;
 
-    const Value keyId, keyManageKey, keyPrefixes, keyItem,
-    keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
+    const Value keyManageKey, keyPrefixes, keyItem, keyId,
+        keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyErrCode, keyErrDesc;
 
     SlotMap slots;
@@ -49,9 +49,9 @@ private:
 
     Aside():
         itemPool(Config::instance()->itemsAllocStep, Config::instance()->maxItems),
-        keyItem(Config::instance()->keyItem.data(), Config::instance()->keyItem.length()),
         keyManageKey(Config::instance()->keyManageKey.data(), Config::instance()->keyManageKey.length()),
         keyPrefixes(Config::instance()->keyPrefixes.data(), Config::instance()->keyPrefixes.length()),
+        keyItem(Config::instance()->keyItem.data(), Config::instance()->keyItem.length()),
         keyId(Config::instance()->keyId.data(), Config::instance()->keyId.length()),
         keyPrefix(Config::instance()->keyPrefix.data(), Config::instance()->keyPrefix.length()),
         keyFilters(Config::instance()->keyFilters.data(), Config::instance()->keyFilters.length()),

@@ -330,6 +330,9 @@ void Config::loadOptions()
     keyFields = to<std::string>("key-fields");
     keyNum = to<std::string>("key-num");
 
+    keyErrCode = to<std::string>("key-error-code");
+    keyErrDesc = to<std::string>("key-error-description");
+
 #if CS_DEBUG
     boost::system::error_code err;
     boost::filesystem::path path = boost::filesystem::canonical(file, err);
