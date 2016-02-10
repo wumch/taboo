@@ -1,18 +1,17 @@
 
 #pragma once
 
-#include "../predef.hpp"
+#include "../BaseHandler.hpp"
 #include <functional>
 #include <utility>
 #include <map>
 #include <sstream>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
-#include <boost/lexical_cast.hpp>
 #include "rapidjson/document.h"
 #include "../Config.hpp"
 #include "../Aside.hpp"
-#include "../BaseHandler.hpp"
+#include "../Item.hpp"
 #include "Signer.hpp"
 
 namespace taboo  {
@@ -22,69 +21,55 @@ class BaseHandler:
     public taboo::BaseHandler
 {
 protected:
-    typedef int32_t ec_t;   // error-code type
-    typedef boost::unordered_map<ec_t, Response> ResponseMap;
-
-    typedef enum {
-        err_err_ok = 0,
-        err_unknown = 1,
-        bad_request_method = 101,
-        bad_request = 102,
-        bad_sign = 201,
-        bad_param = 202,
+    enum {
+        err_bad_request_method  = 200001,
+        err_bad_request         = 200002,
+        err_bad_sign            = 200001,
+        err_bad_param           = 200002,
     };
 
-    struct Res {
-        ec_t code;
-        std::string response;
-    };
-    typedef boost::shared_ptr<Res> ResPtr;
+    typedef boost::unordered_map<ec_t, ReplyPtr> ReplyPtrMap;
 
-    const Response escapedQuotation;
+    const ReplyPtr errUnknownReply;
 
-    const Response errUnknownResponse;
+    const ReplyPtrMap replys;
 
-    const ResponseMap responseMap;
+    std::string sign;
 
 public:
     BaseHandler():
-        taboo::BaseHandler(), escapedQuotation(new std::string("\\\"")),
-        errUnknownResponse(genResponse(error_unknown, "unknown error"))
+        taboo::BaseHandler(),
+        errUnknownReply(genReply(err_unknown, "unknown error", mem_mode_persist))
     {
-        initResponseMap();
+        initReplys();
     }
 
-    virtual std::string process()
+    virtual ReplyPtr process()
     {
         if (validate()) {
             prepare();
             return _process();
         } else {
-            return errUnknownResponse;
+            return errUnknownReply;
         }
-    }
-
-    virtual bool addParam(const char* key, const char* value, const std::size_t valueLength)
-    {
-        params.insert(std::make_pair(std::string(key), std::string(value, valueLength)));
     }
 
     virtual ~BaseHandler() {}
 
 protected:
-    bool initResponseMap()
+    virtual bool addParam(const char* key, const char* value, const std::size_t valueLength)
     {
-        ResponseMap& resps = const_cast<ResponseMap&>(responseMap);
-        resps.insert(std::make_pair(err_unknown, errUnknownResponse));
-        resps.insert(std::make_pair(err_bad_request_method, genResponse(err_bad_request_method, "request method not allowed")));
-        resps.insert(std::make_pair(err_bad_request, genResponse(err_bad_request, "bad request")));
-        resps.insert(std::make_pair(err_bad_sign, genResponse(err_bad_sign, "bad sign")));
-        resps.insert(std::make_pair(err_bad_param, genResponse(err_bad_param, "bad param")));
+        if (key == Config::instance()->keySign) {
+            sign = std::string(value, valueLength);
+        } else {
+            params.insert(std::make_pair(std::string(key), std::string(value, valueLength)));
+        }
+        return true;
     }
 
     virtual bool validate()
     {
-        return true;
+        return checkParams() && checkSign();
     }
 
     virtual void prepare()
@@ -92,62 +77,62 @@ protected:
         params.clear();
     }
 
-    virtual Response _process() const = 0
+    virtual ReplyPtr _process()
     {
-        ResPtr res = deal();
-        if (res->response.empty()) {
-            return getResponse(res->code);
-        } else {
-            return res->response;
-        }
+        ResPtr reply = deal();
+        return reply ? reply : getResponse(reply->code);
     }
 
     virtual ResPtr deal() const = 0;
 
-    virtual const Response getResponse(ec_t errCode) const
+    bool checkSign() const
     {
-        ResponseMap::const_iterator it = responseMap.find(errCode);
-        if (it == responseMap.end()) {
-            return errUnknownResponse;
+        if (!config->checkSign) {
+            return true;
+        }
+        MD5Stream stream;
+        stream << uri << config->signDelimiter
+            << method << config->signDelimiter
+            << config->manageSecret;
+        for (ParamMap::const_iterator it = params.begin(); it != params.end(); ++it) {
+            stream << config->signDelimiter << it->first << config->signHyphen << it->second;
+        }
+        return stream.hex() == sign;
+    }
+
+    virtual bool checkParams() const
+    {
+        return !sign.empty();
+    }
+
+    virtual ReplyPtr getResponse(ec_t errCode) const
+    {
+        ReplyPtrMap::const_iterator it = replys.find(errCode);
+        if (it == replys.end()) {
+            return errUnknownReply;
         } else {
             return it->second;
         }
     }
 
-    Response genResponse(ec_t errCode, const std::string& errDesc) const
+    virtual void initReplys()
     {
-        Response resp(new std::string);
-        std::string& res = *resp;
-        res.reserve(9 + 10 + Config::instance()->keyErrCode.length()
-            + Config::instance()->keyErrDesc.length() + errDesc.length());
-        res += "{\"";
-        res += Aside::instance()->keyErrCode;
-        res += "\":";
-        res += boost::lexical_cast<std::string>(errCode);
-        if (!errDesc.empty()) {
-            res += ",\"";
-            res += Aside::instance()->keyErrDesc;
-            res += "\":\"";
-            if (errDesc.find('"') == errDesc.npos) {
-                res += errDesc;
-            } else {
-                res += quote(errDesc);
-            }
-        }
-        res += "\"}";
-        return resp;
+        ReplyPtrMap& map = const_cast<ReplyPtrMap&>(replys);
+        map.insert(std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
+        fillReply(err_bad_request_method, "request method not allowed");
+        fillReply(err_bad_request, "bad request");
+        fillReply(err_bad_sign, "bad sign");
+        fillReply(err_bad_param, "bad param");
+        _initReplys(map);
     }
 
-    std::string quote(const std::string& str) const
+    virtual void fillReply(ec_t errCode, const std::string& errDesc)
     {
-        std::string res = str;
-        std::string::size_type pos = 0;
-        while (pos = res.find('"', pos) != res.npos) {
-            res = res.replace(pos, 1, escapedQuotation);
-            pos += escapedQuotation.length();
-        }
-        return res;
+        const_cast<ReplyPtrMap&>(replys).insert(std::make_pair(errCode,
+            genReply(err_bad_request_method, errDesc, mem_mode_persist)));
     }
+
+    virtual void _initReplys(ReplyPtrMap& _replys) {}
 };
 
 }

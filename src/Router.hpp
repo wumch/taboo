@@ -14,25 +14,45 @@ namespace taboo {
 class Router
 {
 private:
+    static Router* _instance;
+
     typedef boost::shared_ptr<BaseHandler> HandlerPtr;
     typedef boost::unordered_map<std::string, HandlerPtr> HandlerMap;
 
     enum {
-        err_no_route = -1,
+        err_no_route = 101,
     };
 
     const Config* config;
 
-    const HandlerMap handlerMap;
+    HandlerMap handlerMap;
 
-    const std::string noRouteResponse;
+    const HandlerPtr noRouteHandler;
 
-public:
+    static Router* instance()
+    {
+        return _instance;
+    }
+
     Router():
-        noRouteResponse("{\"" + config->keyErrCode + "\":"
-            + boost::lexical_cast<std::string>(err_no_route) + "\"}")
+        config(Config::instance()),
+        noRouteHandler(new NoRouteHandler)
     {
         initHandlerMap();
+    }
+
+public:
+    HandlerPtr route(const std::string& method, const std::string& uri) const
+    {
+        HandlerMap::const_iterator it;
+        if (uri.empty()) {
+            return noRouteHandler;
+        }
+        HandlerMap::const_iterator it = handlerMap.find(uri);
+        if (it == handlerMap.end()) {
+            return noRouteHandler;
+        }
+        return it->second;
     }
 
 protected:

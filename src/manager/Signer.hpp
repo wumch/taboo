@@ -1,14 +1,15 @@
 
 #pragma once
 
-#include "predef.hpp"
+#include "../predef.hpp"
 #include <cstring>
+#include <string>
 extern "C" {
 #   include <openssl/md5.h>
 }
 
-namespace taboo
-{
+namespace taboo {
+namespace manager {
 
 class StrRef
 {
@@ -223,4 +224,5 @@ inline MD5Stream& operator>>(MD5Stream& stream, char* str)
     return stream;
 }
 
+}
 }

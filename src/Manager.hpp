@@ -22,10 +22,8 @@ extern "C" {
 #include <boost/unordered_map.hpp>
 #include "rapidjson/document.h"
 #include "stage/sys.hpp"
-#include "Signer.hpp"
-#include "Item.hpp"
-#include "Keeper.hpp"
 #include "Config.hpp"
+#include "Router.hpp"
 
 namespace taboo
 {

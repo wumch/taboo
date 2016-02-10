@@ -27,7 +27,7 @@ private:
 public:
     ItemPool itemPool;
 
-    const Value keyId, keyManageKey, keySign, keyPrefixes, keyItem,
+    const Value keyId, keyManageKey, keyPrefixes, keyItem,
     keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyErrCode, keyErrDesc;
 
@@ -51,7 +51,6 @@ private:
         itemPool(Config::instance()->itemsAllocStep, Config::instance()->maxItems),
         keyItem(Config::instance()->keyItem.data(), Config::instance()->keyItem.length()),
         keyManageKey(Config::instance()->keyManageKey.data(), Config::instance()->keyManageKey.length()),
-        keySign(Config::instance()->keySign.data(), Config::instance()->keySign.length()),
         keyPrefixes(Config::instance()->keyPrefixes.data(), Config::instance()->keyPrefixes.length()),
         keyId(Config::instance()->keyId.data(), Config::instance()->keyId.length()),
         keyPrefix(Config::instance()->keyPrefix.data(), Config::instance()->keyPrefix.length()),
