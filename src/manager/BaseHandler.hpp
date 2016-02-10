@@ -4,9 +4,9 @@
 #include "../predef.hpp"
 #include <functional>
 #include <utility>
-#include <string>
 #include <map>
 #include <sstream>
+#include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/lexical_cast.hpp>
 #include "rapidjson/document.h"
@@ -18,14 +18,12 @@
 namespace taboo  {
 namespace manager {
 
-typedef std::map<std::string, std::string, std::less<std::string> > ParamMap;
-
 class BaseHandler:
     public taboo::BaseHandler
 {
 protected:
     typedef int32_t ec_t;   // error-code type
-    typedef boost::unordered_map<ec_t, std::string> ResponseMap;
+    typedef boost::unordered_map<ec_t, Response> ResponseMap;
 
     typedef enum {
         err_err_ok = 0,
@@ -36,15 +34,21 @@ protected:
         bad_param = 202,
     };
 
-    const std::string escapedQuotation;
+    struct Res {
+        ec_t code;
+        std::string response;
+    };
+    typedef boost::shared_ptr<Res> ResPtr;
 
-    const std::string errUnknownResponse;
+    const Response escapedQuotation;
+
+    const Response errUnknownResponse;
 
     const ResponseMap responseMap;
 
 public:
     BaseHandler():
-        taboo::BaseHandler(), escapedQuotation("\\\""),
+        taboo::BaseHandler(), escapedQuotation(new std::string("\\\"")),
         errUnknownResponse(genResponse(error_unknown, "unknown error"))
     {
         initResponseMap();
@@ -88,14 +92,19 @@ protected:
         params.clear();
     }
 
-    virtual std::string _process() const
+    virtual Response _process() const = 0
     {
-        return getResponse(deal());
+        ResPtr res = deal();
+        if (res->response.empty()) {
+            return getResponse(res->code);
+        } else {
+            return res->response;
+        }
     }
 
-    virtual ec_t deal() const = 0;
+    virtual ResPtr deal() const = 0;
 
-    virtual const std::string& getResponse(ec_t errCode) const
+    virtual const Response getResponse(ec_t errCode) const
     {
         ResponseMap::const_iterator it = responseMap.find(errCode);
         if (it == responseMap.end()) {
@@ -105,9 +114,10 @@ protected:
         }
     }
 
-    std::string genResponse(ec_t errCode, const std::string& errDesc) const
+    Response genResponse(ec_t errCode, const std::string& errDesc) const
     {
-        std::string res;
+        Response resp(new std::string);
+        std::string& res = *resp;
         res.reserve(9 + 10 + Config::instance()->keyErrCode.length()
             + Config::instance()->keyErrDesc.length() + errDesc.length());
         res += "{\"";
@@ -125,7 +135,7 @@ protected:
             }
         }
         res += "\"}";
-        return res;
+        return resp;
     }
 
     std::string quote(const std::string& str) const

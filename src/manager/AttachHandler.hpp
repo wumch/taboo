@@ -19,10 +19,7 @@ protected:
     };
 
 public:
-    static bool initialize()
-    {
-
-    }
+    
 };
 
 }
