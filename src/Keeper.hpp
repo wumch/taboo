@@ -21,11 +21,19 @@ private:
 
     Farm& farm;
 
+    static Keeper* _instance;
+
 public:
-    Keeper():
-        trie(Aside::instance()->trie),
-        farm(Aside::instance()->farm)
-    {}
+    static Keeper* instance()
+    {
+        return _instance;
+    }
+
+    static bool initialize()
+    {
+        _instance = new Keeper;
+        return true;
+    }
 
     bool attach(const KeyList& keys, const ItemPtr& item)
     {
@@ -57,6 +65,11 @@ public:
     }
 
 private:
+    Keeper():
+        trie(Aside::instance()->trie),
+        farm(Aside::instance()->farm)
+    {}
+
     class AttachCallback
     {
     private:

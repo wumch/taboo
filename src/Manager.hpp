@@ -20,6 +20,7 @@ extern "C" {
 #include <boost/thread/mutex.hpp>
 #include <boost/pool/singleton_pool.hpp>
 #include <boost/unordered_map.hpp>
+#include "rapidjson/document.h"
 #include "stage/sys.hpp"
 #include "Signer.hpp"
 #include "Item.hpp"
@@ -67,16 +68,17 @@ public:
 
     bool checkSign() const
     {
+        if (!config->checkSign) {
+            return true;
+        }
         MD5Stream stream;
-        stream << config->manageSecret;
+        stream << url << config->signDelimiter
+            << method << config->signDelimiter
+            << config->manageSecret;
         for (ParamMap::const_iterator it = params.begin(); it != params.end(); ++it) {
-            CS_DUMP(it->first);
-            CS_DUMP(it->second);
             stream << config->signDelimiter << it->first << config->signHyphen << it->second;
         }
-        std::string s = stream.hex();
-        CS_DUMP(s);
-        return s == sign;
+        return stream.hex() == sign;
     }
 
     bool checkParams() const
@@ -158,8 +160,6 @@ class Manager
 {
 private:
     static Manager* _instance;
-
-    static Keeper keeper;
 
     typedef enum {
         ok = 0,
@@ -276,7 +276,7 @@ protected:
         if (!item) {
             return failed_on_create_item;
         }
-        if (!keeper.attach(keys, item)) {
+        if (!Keeper::instance()->attach(keys, item)) {
             return failed_on_attach_item;
         }
         return ok;
@@ -335,8 +335,8 @@ protected:
 #define __TABOO_ADD_ERR_RESP(code, desc)  errs.insert(std::make_pair(code, std::string(             \
         "{\"result\":" + boost::lexical_cast<std::string>(code) + ",\"desc\":\"" desc "\"}")));
 
-        __TABOO_ADD_ERR_RESP(ok, "succeed");
-        __TABOO_ADD_ERR_RESP(error_unknown, "unknown");
+        __TABOO_ADD_ERR_RESP(ok, "success");
+        __TABOO_ADD_ERR_RESP(error_unknown, "unknown error");
         __TABOO_ADD_ERR_RESP(bad_sign, "bad sign");
         __TABOO_ADD_ERR_RESP(bad_param, "bad param");
         __TABOO_ADD_ERR_RESP(no_prefixes, "no prefixes");

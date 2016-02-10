@@ -5,7 +5,8 @@
 #include <string>
 #include <list>
 #define USE_FAST_LOAD
-#include "cedar/cedar.h"
+#   include "cedar/cedar.h"
+#undef USE_FAST_LOAD
 #include "Item.hpp"
 
 namespace taboo
@@ -29,8 +30,7 @@ public:
     bool attach(const KeyList& keys, id_t id, Callback& cb)
     {
         bool attached = false;
-        for (KeyList::const_iterator it = keys.begin(); it != keys.end(); ++it)
-        {
+        for (KeyList::const_iterator it = keys.begin(); it != keys.end(); ++it) {
             std::size_t nodePos = 0, keyPos = 0;
             id_t slotId = da.traverse(it->data(), nodePos, keyPos, it->length());
             if (slotId == no_value || slotId == no_path) {

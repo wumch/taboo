@@ -229,6 +229,11 @@ void Config::initDesc()
             "key name for 'fields' of query requests, default is 'fields'.")
         ("key-num", boost::program_options::value<std::string>()->default_value(("num")),
             "key name for 'num' of query requests, default is 'num'.")
+
+        ("key-error-code", boost::program_options::value<std::string>()->default_value(("code")),
+             "key name for 'error-code' of manage response, default is 'code'.")
+        ("key-error-description", boost::program_options::value<std::string>()->default_value(("desc")),
+            "key name for 'error-description' of manage response, default is 'desc'.")
     ;
 }
 
@@ -370,6 +375,9 @@ void Config::loadOptions()
         _TABOO_OUT_CONFIG_OPTION(itemsAllocStep)
         _TABOO_OUT_CONFIG_OPTION(maxItems)
 
+        _TABOO_OUT_CONFIG_OPTION(prefixMinLen)
+        _TABOO_OUT_CONFIG_OPTION(prefixMaxLen)
+
         _TABOO_OUT_CONFIG_OPTION(maxIterations)
         _TABOO_OUT_CONFIG_OPTION(maxMatches)
         _TABOO_OUT_CONFIG_OPTION(defaultMatches)
@@ -390,9 +398,8 @@ void Config::loadOptions()
         _TABOO_OUT_CONFIG_OPTION(keyExcludes)
         _TABOO_OUT_CONFIG_OPTION(keyFields)
         _TABOO_OUT_CONFIG_OPTION(keyNum)
-
-        _TABOO_OUT_CONFIG_OPTION(prefixMinLen)
-        _TABOO_OUT_CONFIG_OPTION(prefixMaxLen)
+        _TABOO_OUT_CONFIG_OPTION(keyErrCode)
+        _TABOO_OUT_CONFIG_OPTION(keyErrDesc)
     );
 }
 

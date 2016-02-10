@@ -10,13 +10,14 @@ namespace taboo
 ItemPtr makeItem(const char* str)
 {
 //    ItemPtr item(Aside::instance()->itemPool.malloc());
-    ItemPtr item(new Item);
+    ItemPtr item(new Item), res;
     item->dom.Parse(str);
     if (CS_BLIKELY(!item->dom.HasParseError())) {
         Value::MemberIterator it = item->dom.FindMember(Aside::instance()->keyId);
         if (CS_BLIKELY(it != item->dom.MemberEnd())) {
             if (CS_BLIKELY(it->value.IsUint())) {
                 item->id = it->value.GetUint();
+                res = item;
             } else {
                 LOG_EVERY_N(ERROR, 10) << "value of 'item'.'id' must be of type uint32_t." " (" << google::COUNTER << ")";
             }
@@ -26,7 +27,7 @@ ItemPtr makeItem(const char* str)
     } else {
         LOG(ERROR) << "error occured while parsing 'item': " << rapidjson::GetParseError_En(item->dom.GetParseError());
     }
-    return item;
+    return res;
 }
 
 }

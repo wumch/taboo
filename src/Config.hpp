@@ -86,7 +86,8 @@ public:
     std::string manageKey, manageSecret, signHyphen, signDelimiter;
 
     std::string keyManageKey, keySign, keyItem,
-        keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum;
+        keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
+        keyErrCode, keyErrDesc;
 };
 
 }
