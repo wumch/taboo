@@ -134,7 +134,6 @@ protected:
             MHD_OPTION_LISTENING_ADDRESS_REUSE, config->reuseAddress,
             MHD_OPTION_NOTIFY_COMPLETED, &Manager::onRequestCompleted, NULL,
             MHD_OPTION_END);
-        CS_DUMP((uint64_t)daemon);
         if (daemon == NULL) {
             CS_DIE("failed on create MHD_Daemon: " << CS_LINESEP << strerror(errno));
         }
@@ -155,25 +154,21 @@ protected:
             MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND,
                 &Manager::getParamIterator, closure);
             if (closure->handler->isPost()) {
-                CS_SAY("is post");
                 closure->postProcessor = MHD_create_post_processor(connection,
                     closure->config->manageConnectionReadBuffer,
                     &Manager::postParamIterator, *conClosure);
                 ok = !!closure->postProcessor;
             }
-            CS_DUMP(ok);
             return ok ? MHD_YES : MHD_NO;;
 
         } else if (*uploadDataSize) {
             int res = MHD_post_process(static_cast<Closure*>(*conClosure)->postProcessor,
                 uploadData, *uploadDataSize);
             *uploadDataSize = 0;
-            CS_DUMP(res);
             return res;
 
         } else {
             ReplyPtr reply = static_cast<Closure*>(*conClosure)->handler->process();
-            CS_DUMP(reply->content);
             *conClosure = NULL;
             return MHD_queue_response(connection, 200, createResponse(reply));
         }
@@ -190,14 +185,12 @@ protected:
         const char* filename, const char* contentType, const char* transferEncoding,
         const char* data, uint64_t offset, size_t size) throw()
     {
-        CS_DUMP(key);
         return static_cast<Closure*>(closure)->handler->addPostParam(key, data, size) ? MHD_YES : MHD_NO;
     }
 
     static int getParamIterator(void* _closure, MHD_ValueKind kind,
         const char* key, const char* value) throw()
     {
-        CS_DUMP(key);
         return static_cast<Closure*>(_closure)->handler->addGetParam(key, value) ? MHD_YES : MHD_NO;
     }
 

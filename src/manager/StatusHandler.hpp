@@ -15,6 +15,8 @@ public:
         ResPtr res;
         return res;
     }
+
+    static void initReplys() {}
 };
 
 }

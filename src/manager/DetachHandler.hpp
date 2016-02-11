@@ -21,6 +21,8 @@ public:
         ResPtr res(new Res(err_detach));
         return res;
     }
+
+    static void initReplys() {}
 };
 
 }

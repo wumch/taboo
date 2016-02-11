@@ -19,6 +19,8 @@ protected:
         err_attach_item     = 202005,
     };
 
+    static const ReplyPtr okReply;
+
 protected:
     virtual ResPtr deal() const
     {
@@ -46,18 +48,20 @@ protected:
                 break;
             }
             res->code = err_ok;
+            res->reply = okReply;
 
         } while (false);
         CS_DUMP(res->code);
         return res;
     }
 
-    virtual bool checkParams() const
+    virtual ec_t checkParams() const
     {
-        return !sign.empty()
+        return (!sign.empty()
            && params.find(config->keyManageKey) != params.end()
            && params.find(config->keyPrefixes) != params.end()
-           && params.find(config->keyItem) != params.end();
+           && params.find(config->keyItem) != params.end()) ?
+               err_ok : err_bad_param;
     }
 
     KeyList getKeys() const
@@ -78,8 +82,10 @@ protected:
         return keys;
     }
 
-    virtual void _initReplys(ReplyPtrMap& _replys)
+public:
+    static void initReplys()
     {
+        const_cast<ReplyPtr&>(okReply) = genReply(err_ok, "", mem_mode_persist);
         fillReply(err_no_keys, "no prefixes supplied");
         fillReply(err_create_item, "failed on creating item");
         fillReply(err_attach, "failed on attach ");

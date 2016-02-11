@@ -24,11 +24,24 @@ else()
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O2 -Wl,-as-needed")
 endif()
 
-add_compile_options(-pthread -fomit-frame-pointer -pipe -fno-strict-aliasing -Wall -Wno-unused-local-typedef)
+add_compile_options(-pthread -fomit-frame-pointer -pipe -fno-strict-aliasing 
+    -Wall -Wno-unused-local-typedef)
 
 include_directories(libs libs/websocketpp libs/rapidjson/include)
 
-link_libraries(boost_system boost_chrono boost_program_options boost_filesystem boost_thread crypto microhttpd glog)
+link_libraries(boost_system boost_chrono boost_program_options boost_filesystem boost_thread 
+    crypto microhttpd glog)
+
+# todo: should link staticaly
+find_library(lib_malloc jemalloc)
+if (lib_malloc)
+    link_libraries(jemalloc)
+else()
+    find_library(lib_malloc tcmalloc)
+    if (lib_malloc)
+        link_libraries(tcmalloc)
+    endif()
+endif()
 
 file(GLOB_RECURSE SOURCE_FILES src/*.?pp)
 add_executable(taboo ${SOURCE_FILES})

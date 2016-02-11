@@ -43,7 +43,7 @@ typedef boost::shared_ptr<Reply> ReplyPtr;
 class BaseHandler
 {
 private:
-    const std::string escapedQuotation;
+    static const std::string escapedQuotation;
 
 protected:
     enum {
@@ -70,7 +70,7 @@ protected:
 
     const Config* config;
 
-    const std::string methodGet, methodPost;
+   static  const std::string methodGet, methodPost;
 
     std::string method, uri;
 
@@ -78,8 +78,7 @@ protected:
 
 public:
     BaseHandler():
-        escapedQuotation("\\\""), config(Config::instance()),
-        methodGet("GET"), methodPost("POST")
+        config(Config::instance())
     {}
 
     virtual bool setMeta(const std::string& _method, const std::string& _uri)
@@ -122,13 +121,13 @@ protected:
         return true;
     }
 
-    std::string quote(const std::string& str) const
+    static std::string quote(const std::string& str)
     {
         std::string res;
         res.reserve(str.length() + 32);
         std::string::size_type consumed = 0, pos = 0;
-        while ((pos = res.find('"', pos)) != res.npos) {
-            res.append(str, consumed, pos);
+        while ((pos = str.find('"', pos)) != str.npos) {
+            res.append(str, consumed, pos - consumed);
             res += escapedQuotation;
             consumed = ++pos;
         }
@@ -138,28 +137,30 @@ protected:
         return res;
     }
 
-    ReplyPtr genReply(ec_t errCode, const std::string& errDesc,
-        MemMode memMode = mem_mode_must_copy) const
+    static ReplyPtr genReply(ec_t errCode, const std::string& errDesc,
+        MemMode memMode = mem_mode_must_copy)
     {
         ReplyPtr reply(new Reply(memMode));
-        std::string& res = reply->content;
-        res.reserve(9 + 10 + config->keyErrCode.length()
-            + config->keyErrDesc.length() + errDesc.length());
-        res += "{\"";
-        res += config->keyErrCode;
-        res += "\":";
-        res += boost::lexical_cast<std::string>(errCode);
+        std::string& content = reply->content;
+        content.reserve((9 + 10) + Config::instance()->keyErrCode.length()
+            + Config::instance()->keyErrDesc.length() + errDesc.length());
+        content += "{\"";
+        content += Config::instance()->keyErrCode;
+        content += "\":";
+        content += boost::lexical_cast<std::string>(errCode);
         if (!errDesc.empty()) {
-            res += ",\"";
-            res += config->keyErrDesc;
-            res += "\":\"";
+            content += ",\"";
+            content += Config::instance()->keyErrDesc;
+            content += "\":\"";
             if (errDesc.find('"') == errDesc.npos) {
-                res += errDesc;
+                content += errDesc;
             } else {
-                res += quote(errDesc);
+                content += quote(errDesc);
             }
+            content += '"';
         }
-        res += "\"}";
+        content += '}';
+        CS_DUMP(content);
         return reply;
     }
 };

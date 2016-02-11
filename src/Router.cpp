@@ -18,4 +18,22 @@ void Router::initHandlerMap()
 //    handlers.insert(std::make_pair(std::string("/manage/store"), &manager::StoreHandler::create));
 }
 
+const std::string BaseHandler::escapedQuotation("\\\"");
+const std::string BaseHandler::methodGet("GET");
+const std::string BaseHandler::methodPost("POST");
+
+const ReplyPtr manager::BaseHandler::errUnknownReply;
+
+const manager::BaseHandler::ReplyPtrMap manager::BaseHandler::replys;
+
+const ReplyPtr manager::AttachHandler::okReply;
+
+void Router::initHandlerRelyMap()
+{
+    manager::BaseHandler::initReplys();
+    manager::StatusHandler::initReplys();
+    manager::AttachHandler::initReplys();
+    manager::DetachHandler::initReplys();
+}
+
 }

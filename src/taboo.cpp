@@ -64,8 +64,9 @@ int main(int argc, char* argv[])
     google::InitGoogleLogging(argv[0]);
     if (!taboo::Config::initialize(argc, argv)
         || !taboo::Aside::initialize()
+        || !taboo::Keeper::initialize()
         || !taboo::Manager::initialize()
-        || !taboo::Keeper::initialize()) {
+        || !taboo::Router::initialize()) {
         CS_DIE("failed on initialize");
     }
 

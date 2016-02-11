@@ -6,7 +6,6 @@
 #include <utility>
 #include <map>
 #include <sstream>
-#include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include "rapidjson/document.h"
 #include "../Config.hpp"
@@ -15,45 +14,56 @@
 #include "Signer.hpp"
 
 namespace taboo  {
+
+class Router;
+
 namespace manager {
 
 class BaseHandler:
     public taboo::BaseHandler
 {
+    friend class taboo::Router;
 protected:
     enum {
         err_bad_request_method  = 200001,
         err_bad_request         = 200002,
-        err_bad_sign            = 200001,
-        err_bad_param           = 200002,
+        err_bad_param           = 200003,
+        err_bad_sign            = 200004,
     };
 
     typedef boost::unordered_map<ec_t, ReplyPtr> ReplyPtrMap;
 
-    const ReplyPtr errUnknownReply;
+    static const ReplyPtr errUnknownReply;
 
-    const ReplyPtrMap replys;
+    static const ReplyPtrMap replys;
 
     std::string sign;
 
 public:
     BaseHandler():
-        taboo::BaseHandler(),
-        errUnknownReply(genReply(err_unknown, "unknown error", mem_mode_persist))
-    {
-        initReplys();
-    }
+        taboo::BaseHandler()
+    {}
 
     virtual ReplyPtr process()
     {
-        if (validate()) {
-            prepare();
-            ReplyPtr reply = _process();
-            CS_DUMP(reply->content);
-            return reply;
+        ec_t code = validate();
+        if (code == err_ok) {
+            return _process();
         } else {
-            return errUnknownReply;
+            return getReply(code);
         }
+    }
+
+    static void initReplys()
+    {
+        const_cast<ReplyPtr&>(errUnknownReply) =
+            genReply(err_unknown, "unknown error", mem_mode_persist);
+        ReplyPtrMap& map = const_cast<ReplyPtrMap&>(replys);
+        map.insert(std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
+        fillReply(err_bad_request_method, "request method not allowed");
+        fillReply(err_bad_request, "bad request");
+        fillReply(err_bad_sign, "bad sign");
+        fillReply(err_bad_param, "bad param");
     }
 
     virtual ~BaseHandler() {}
@@ -61,43 +71,34 @@ public:
 protected:
     virtual bool addParam(const char* key, const char* value, const std::size_t valueLength)
     {
-        CS_DUMP(key);
-        CS_DUMP(value);
         if (key == Config::instance()->keySign) {
             sign = std::string(value, valueLength);
         } else {
             params.insert(std::make_pair(std::string(key), std::string(value, valueLength)));
         }
-        CS_SAY("a");
         return true;
     }
 
-    virtual bool validate()
+    virtual ec_t validate()
     {
-        return checkParams() && checkSign();
-    }
-
-    virtual void prepare()
-    {
-        if (config->checkSign) {
-            sign.clear();
-        }
-        params.clear();
+        ec_t code = checkParams();
+        CS_DUMP(code);
+        return (code == err_ok) ? checkSign() : code;
     }
 
     virtual ReplyPtr _process()
     {
-        ResPtr reply = deal();
-        return reply ? (reply->reply ? reply->reply : getResponse(reply->code))
-            : getResponse(err_unknown);
+        ResPtr res = deal();
+        return res ? (res->reply ? res->reply : getReply(res->code))
+            : getReply(err_unknown);
     }
 
     virtual ResPtr deal() const = 0;
 
-    bool checkSign() const
+    ec_t checkSign() const
     {
         if (!config->checkSign) {
-            return true;
+            return err_bad_sign;
         }
         MD5Stream stream;
         stream << uri << config->signDelimiter
@@ -106,16 +107,18 @@ protected:
         for (ParamMap::const_iterator it = params.begin(); it != params.end(); ++it) {
             stream << config->signDelimiter << it->first << config->signHyphen << it->second;
         }
-        return stream.hex() == sign;
+        return stream.hex() == sign ? err_ok : err_bad_sign;
     }
 
-    virtual bool checkParams() const
+    virtual ec_t checkParams() const
     {
-        return !sign.empty();
+        return sign.empty() ? err_bad_param : err_ok;
     }
 
-    virtual ReplyPtr getResponse(ec_t errCode) const
+    virtual ReplyPtr getReply(ec_t errCode) const
     {
+        CS_DUMP(errCode);
+        CS_DUMP(replys.size());
         ReplyPtrMap::const_iterator it = replys.find(errCode);
         if (it == replys.end()) {
             return errUnknownReply;
@@ -124,24 +127,12 @@ protected:
         }
     }
 
-    virtual void initReplys()
+    static void fillReply(ec_t errCode, const std::string& errDesc)
     {
-        ReplyPtrMap& map = const_cast<ReplyPtrMap&>(replys);
-        map.insert(std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
-        fillReply(err_bad_request_method, "request method not allowed");
-        fillReply(err_bad_request, "bad request");
-        fillReply(err_bad_sign, "bad \"s\"i\"agn");
-        fillReply(err_bad_param, "bad param");
-        _initReplys(map);
-    }
-
-    virtual void fillReply(ec_t errCode, const std::string& errDesc)
-    {
+        CS_SAY(errCode << ": " << errDesc);
         const_cast<ReplyPtrMap&>(replys).insert(std::make_pair(errCode,
             genReply(errCode, errDesc, mem_mode_persist)));
     }
-
-    virtual void _initReplys(ReplyPtrMap& _replys) {}
 };
 
 }

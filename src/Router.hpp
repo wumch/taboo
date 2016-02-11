@@ -42,27 +42,30 @@ public:
         return _instance;
     }
 
+    static bool initialize()
+    {
+        initHandlerRelyMap();
+        return true;
+    }
+
     HandlerPtr route(const std::string& method, const std::string& uri) const
     {
-        CS_DUMP(method);
-        CS_DUMP(uri);
         if (uri.empty()) {
             return noRouteHandlerCreator();
         }
         HandlerMap::const_iterator it = handlerMap.find(uri);
         if (it == handlerMap.end()) {
-            CS_SAY("no route");
             return noRouteHandlerCreator();
         }
-        CS_SAY("route succeed");
         HandlerPtr handler = (it->second)();
         handler->setMeta(method, uri);
-        CS_DUMP(handler->isPost());
         return handler;
     }
 
 protected:
     void initHandlerMap();
+
+    static void initHandlerRelyMap();
 };
 
 }
