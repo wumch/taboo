@@ -8,15 +8,18 @@ namespace taboo {
 namespace manager {
 
 class AttachHandler:
-    public BaseHandler, public taboo::HandlerCreator<AttachHandler>
+    public BaseHandler,
+    public taboo::HandlerCreator<AttachHandler>,
+    private ManagerECAlloctor<2>
 {
+    using ManagerECAlloctor<2>::ECA;
 protected:
     enum {
-        err_no_keys         = 202001,
-        err_create_item     = 202002,
-        err_attach          = 202003,
-        err_attach_keys     = 202004,
-        err_attach_item     = 202005,
+        err_no_keys         = ECA::ECC<1>::value,
+        err_create_item     = ECA::ECC<2>::value,
+        err_attach          = ECA::ECC<3>::value,
+        err_attach_keys     = ECA::ECC<4>::value,
+        err_attach_item     = ECA::ECC<5>::value,
     };
 
     static const uint32_t maxParamNum = 10;

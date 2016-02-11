@@ -3,6 +3,7 @@
 
 #include "predef.hpp"
 #include <algorithm>
+#include <boost/unordered_set.hpp>
 #include "Aside.hpp"
 #include "Config.hpp"
 #include "Farm.hpp"
@@ -11,8 +12,7 @@
 #include "Filter.hpp"
 #include "Query.hpp"
 
-namespace taboo
-{
+namespace taboo {
 
 class Seeker
 {
@@ -25,7 +25,7 @@ private:
 
     mutable FilterChain filter;
 
-    mutable ItemPtrSet items;
+    mutable ItemPtrList items;
 
 public:
     Seeker():
@@ -33,7 +33,7 @@ public:
         farm(Aside::instance()->farm)
     {}
 
-    const ItemPtrSet& seek(const char* _query) const
+    const ItemPtrList& seek(const char* _query) const
     {
         items.clear();
         if (Query::rebuild(query, _query) &&
@@ -46,7 +46,7 @@ public:
 private:
     void seek() const
     {
-        ItemCallback cb(farm, items, filter, query.num);
+        ItemCallback cb(this, query.num);
         ReadLock lock(Aside::instance()->accessMutex);
         trie.traverse(query.prefix, cb);
     }
@@ -54,37 +54,40 @@ private:
     class ItemCallback
     {
     private:
-        const Farm& _farm;
-        ItemPtrSet& _items;
-        FilterChain& filter;
-        const std::size_t _max_num;
-        std::size_t iterations;
+        typedef boost::unordered_set<id_t> ItemIdSet;
+        const Seeker* const seeker;
+        ItemIdSet recorded;
+        const std::size_t maxMatch;
+        std::size_t iterated;
 
     public:
-        ItemCallback(const Farm& __farm, ItemPtrSet& __items, FilterChain& _filter, std::size_t __max_num):
-            _farm(__farm), _items(__items), filter(_filter), _max_num(__max_num), iterations(0)
+        ItemCallback(const Seeker* _seeker, std::size_t _maxMatch):
+            seeker(_seeker), maxMatch(_maxMatch), iterated(0)
         {}
 
-        bool operator()(id_t id)
+        bool operator()(id_t slotId)
         {
-            return CS_BUNLIKELY(Config::instance()->maxIterations < ++iterations) ? false : push_one(id);
+            return Config::instance()->maxIterations < ++iterated ? false : pump(slotId);
         }
 
     private:
-        bool push_one(id_t id)
+        bool pump(id_t slotId)
         {
-            const Slot& slot = _farm.slot(id);
+            const Slot& slot = seeker->farm.slot(slotId);
             if (!slot.empty()) {
                 for (Slot::const_iterator it = slot.begin(); it != slot.end(); ++it) {
-                    if (_items.size() < _max_num) {
-                        CS_DUMP(_items.size());
-                        if (filter.apply(it->second)) {
-                            _items.insert(it->second);
+                    if (seeker->items.size() < maxMatch) {
+                        CS_DUMP(seeker->items.size());
+                        if (recorded.find(it->second->id) == recorded.end()) {
+                            if (seeker->filter.apply(it->second)) {
+                                recorded.insert(it->second->id);
+                                seeker->items.push_back(it->second);
+                            }
                         }
                     }
                 }
             }
-            return _items.size() < _max_num;
+            return seeker->items.size() < maxMatch;
         }
     };
 };

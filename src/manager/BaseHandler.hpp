@@ -1,13 +1,13 @@
 
 #pragma once
 
-#include "../BaseHandler.hpp"
+#include "../predef.hpp"
 #include <functional>
 #include <utility>
 #include <map>
 #include <sstream>
-#include <boost/unordered_map.hpp>
 #include "rapidjson/document.h"
+#include "../BaseHandler.hpp"
 #include "../Config.hpp"
 #include "../Aside.hpp"
 #include "../Item.hpp"
@@ -19,24 +19,25 @@ class Router;
 
 namespace manager {
 
+template<ec_t handlerId>
+class ManagerECAlloctor:
+    protected taboo::ECAlloctor<1, handlerId>
+{};
+
 class BaseHandler:
-    public taboo::BaseHandler
+    public taboo::BaseHandler,
+    private ManagerECAlloctor<0>
 {
     friend class taboo::Router;
+    using ManagerECAlloctor<0>::ECA;
 protected:
     enum {
-        err_bad_request_method  = 200001,
-        err_bad_request         = 200002,
-        err_too_many_param      = 200003,
-        err_bad_param           = 200004,
-        err_bad_sign            = 200005,
+        err_bad_request_method  = ECA::ECC<1>::value,
+        err_bad_request         = ECA::ECC<2>::value,
+        err_too_many_param      = ECA::ECC<3>::value,
+        err_bad_param           = ECA::ECC<4>::value,
+        err_bad_sign            = ECA::ECC<5>::value,
     };
-
-    typedef boost::unordered_map<ec_t, ReplyPtr> ReplyPtrMap;
-
-    static const ReplyPtr errUnknownReply;
-
-    static const ReplyPtrMap replys;
 
     std::string sign;
 
@@ -57,10 +58,6 @@ public:
 
     static void initReplys()
     {
-        const_cast<ReplyPtr&>(errUnknownReply) =
-            genReply(err_unknown, "unknown error", mem_mode_persist);
-        const_cast<ReplyPtrMap&>(replys).insert(
-            std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
         fillReply(err_bad_request_method, "request method not allowed");
         fillReply(err_bad_request, "bad request");
         fillReply(err_bad_sign, "bad sign");
@@ -70,12 +67,12 @@ public:
     virtual ~BaseHandler() {}
 
 protected:
-    virtual bool addParam(const char* key, const char* value, const std::size_t valueLength)
+    virtual bool addParam(const std::string& key, const std::string& value)
     {
         if (key == Config::instance()->keySign) {
-            sign = std::string(value, valueLength);
+            sign = value;
         } else {
-            params.insert(std::make_pair(std::string(key), std::string(value, valueLength)));
+            params.insert(std::make_pair(key, value));
         }
         return true;
     }
@@ -83,7 +80,6 @@ protected:
     virtual ec_t validate()
     {
         ec_t code = checkParams();
-        CS_DUMP(code);
         return (code == err_ok) ? checkSign() : code;
     }
 
@@ -99,7 +95,7 @@ protected:
     ec_t checkSign() const
     {
         if (!config->checkSign) {
-            return err_bad_sign;
+            return err_ok;
         }
         MD5Stream stream;
         stream << uri << config->signDelimiter
@@ -126,13 +122,6 @@ protected:
         } else {
             return it->second;
         }
-    }
-
-    static void fillReply(ec_t errCode, const std::string& errDesc)
-    {
-        CS_SAY(errCode << ": " << errDesc);
-        const_cast<ReplyPtrMap&>(replys).insert(std::make_pair(errCode,
-            genReply(errCode, errDesc, mem_mode_persist)));
     }
 };
 

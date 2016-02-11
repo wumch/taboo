@@ -6,6 +6,7 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/unordered_map.hpp>
 extern "C" {
 #   include <microhttpd.h>
 }
@@ -40,18 +41,35 @@ public:
 
 typedef boost::shared_ptr<Reply> ReplyPtr;
 
-class BaseHandler
+typedef int32_t ec_t;   // error-code type
+
+template<ec_t moduleId, ec_t handlerId>
+class ECAlloctor
+{
+protected:
+    typedef ECAlloctor<moduleId, handlerId> ECA;
+
+    template<ec_t ecId>
+    class ECC   // error code calculater
+    {
+    public:
+        enum { value = moduleId * 100000 + handlerId * 1000 + ecId };
+    };
+};
+
+class BaseHandler:
+    private ECAlloctor<0, 0>
 {
 private:
     static const std::string escapedQuotation;
 
 protected:
     enum {
-        err_ok          = 0,
-        err_unknown     = 1,
-        err_no_route    = 1001,
+        err_ok              = ECA::ECC<0>::value,
+        err_unknown         = ECA::ECC<1>::value,
+        err_no_route        = ECA::ECC<2>::value,
+        err_process_failed  = ECA::ECC<3>::value,
     };
-    typedef int32_t ec_t;   // error-code type
     typedef std::map<std::string, std::string, std::less<std::string> > ParamMap;
 
     struct Res {
@@ -68,9 +86,14 @@ protected:
     };
     typedef boost::shared_ptr<Res> ResPtr;
 
-    const Config* config;
+    static  const std::string methodGet, methodPost;
 
-   static  const std::string methodGet, methodPost;
+    static const ReplyPtr errUnknownReply;
+
+    typedef boost::unordered_map<ec_t, ReplyPtr> ReplyPtrMap;
+    static const ReplyPtrMap replys;
+
+    const Config* config;
 
     std::string method, uri;
 
@@ -95,46 +118,39 @@ public:
         return true;
     }
 
-    bool isPost() const     // todo: wired with WebSocket requests
+    bool isPost() const
     {
         return method == methodPost;
     }
 
     virtual bool addGetParam(const char* key, const char* value)
     {
-        return addParam(key, value, std::strlen(value));
+        return addParam(key, value);
     }
 
     virtual bool addPostParam(const char* key, const char* value, std::size_t valueLength)
     {
-        return addParam(key, value, valueLength);
+        return addParam(key, std::string(value, valueLength));
     }
 
     virtual ReplyPtr process() = 0;
 
+    static void initReplys()
+    {
+        const_cast<ReplyPtr&>(errUnknownReply) =
+            genReply(err_unknown, "unknown error", mem_mode_persist);
+        const_cast<ReplyPtrMap&>(replys).insert(
+            std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
+        fillReply(err_process_failed, "failed on processing");
+    }
+
     virtual ~BaseHandler() {}
 
 protected:
-    virtual bool addParam(const char* key, const char* value, std::size_t valueLength)
+    virtual bool addParam(const std::string& key, const std::string& value)
     {
-        params.insert(std::make_pair(std::string(key), std::string(value, valueLength)));
+        params.insert(std::make_pair(key, value));
         return true;
-    }
-
-    static std::string quote(const std::string& str)
-    {
-        std::string res;
-        res.reserve(str.length() + 32);
-        std::string::size_type consumed = 0, pos = 0;
-        while ((pos = str.find('"', pos)) != str.npos) {
-            res.append(str, consumed, pos - consumed);
-            res += escapedQuotation;
-            consumed = ++pos;
-        }
-        if (str.length() != consumed) {
-            res.append(str, consumed, str.length() - consumed);
-        }
-        return res;
     }
 
     static ReplyPtr genReply(ec_t errCode, const std::string& errDesc,
@@ -162,6 +178,29 @@ protected:
         content += '}';
         CS_DUMP(content);
         return reply;
+    }
+
+    static void fillReply(ec_t errCode, const std::string& errDesc)
+    {
+        CS_SAY(errCode << ": " << errDesc);
+        const_cast<ReplyPtrMap&>(replys).insert(std::make_pair(errCode,
+            genReply(errCode, errDesc, mem_mode_persist)));
+    }
+
+    static std::string quote(const std::string& str)
+    {
+        std::string res;
+        res.reserve(str.length() + 32);
+        std::string::size_type consumed = 0, pos = 0;
+        while ((pos = str.find('"', pos)) != str.npos) {
+            res.append(str, consumed, pos - consumed);
+            res += escapedQuotation;
+            consumed = ++pos;
+        }
+        if (str.length() != consumed) {
+            res.append(str, consumed, str.length() - consumed);
+        }
+        return res;
     }
 };
 
@@ -196,7 +235,7 @@ public:
     }
 
 protected:
-    virtual bool addParam(const char* key, const char* value, std::size_t valueLength)
+    virtual bool addParam(const std::string& key, const std::string& value)
     {
         return true;
     }

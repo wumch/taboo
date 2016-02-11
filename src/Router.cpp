@@ -22,9 +22,9 @@ const std::string BaseHandler::escapedQuotation("\\\"");
 const std::string BaseHandler::methodGet("GET");
 const std::string BaseHandler::methodPost("POST");
 
-const ReplyPtr manager::BaseHandler::errUnknownReply;
+const ReplyPtr BaseHandler::errUnknownReply;
 
-const manager::BaseHandler::ReplyPtrMap manager::BaseHandler::replys;
+const BaseHandler::ReplyPtrMap BaseHandler::replys;
 
 const ReplyPtr manager::AttachHandler::okReply;
 

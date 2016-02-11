@@ -19,10 +19,6 @@ private:
 
     typedef boost::unordered_map<std::string, HandlerCreatorFunc> HandlerMap;
 
-    enum {
-        err_no_route = 101,
-    };
-
     const Config* config;
 
     HandlerMap handlerMap;

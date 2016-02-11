@@ -63,20 +63,20 @@ public:
     void traverse(const std::string& key, Callback& cb) const
     {
         std::size_t nodePos = 0, keyPos = 0;
-        id_t id = da.traverse(key.data(), nodePos, keyPos, key.length());
-        if (id != no_path) {
-            if (id != no_value) {
-                if (!cb(id)) {
+        id_t slogId = da.traverse(key.data(), nodePos, keyPos, key.length());
+        if (slogId != no_path) {
+            if (slogId != no_value) {
+                if (!cb(slogId)) {
                     return;
                 }
             }
             std::size_t root = nodePos;
-            id = da.begin(nodePos, keyPos);
-            while (id != no_path) {
-                if (!cb(id)) {
+            slogId = da.begin(nodePos, keyPos);
+            while (slogId != no_path) {
+                if (!cb(slogId)) {
                     return;
                 }
-                id = da.next(nodePos, keyPos, root);
+                slogId = da.next(nodePos, keyPos, root);
             }
         }
     }

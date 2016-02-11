@@ -3,15 +3,13 @@
 
 #include "predef.hpp"
 #include <boost/shared_ptr.hpp>
-#include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/functional/hash.hpp>
 #include <glog/logging.h>
 #include "rapidjson/document.h"
 #include "stage/misc.hpp"
 
-namespace taboo
-{
+namespace taboo {
 
 typedef uint32_t id_t;
 typedef rapidjson::Document Dom;
@@ -60,7 +58,7 @@ public:
     }
 };
 
-typedef boost::unordered_set<ItemPtr, ItemPtrHasher> ItemPtrSet;
+typedef std::vector<ItemPtr> ItemPtrList;
 typedef boost::unordered_map<id_t, ItemPtr> Slot;
 typedef boost::unordered_map<id_t, Slot> SlotMap;
 

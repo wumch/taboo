@@ -13,20 +13,14 @@
 
 extern int main(int, char*[]);
 
-namespace taboo
-{
+namespace taboo {
 
 typedef boost::shared_lock<boost::shared_mutex> ReadLock;
 typedef boost::unique_lock<boost::shared_mutex> WriteLock;
 
 class Aside
 {
-private:
-    typedef boost::object_pool<Item> ItemPool;
-
 public:
-    ItemPool itemPool;
-
     const Value keyManageKey, keyPrefixes, keyItem, keyId,
         keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyErrCode, keyErrDesc;
@@ -48,7 +42,6 @@ private:
     static Aside* _instance;
 
     Aside():
-        itemPool(Config::instance()->itemsAllocStep, Config::instance()->maxItems),
         keyManageKey(Config::instance()->keyManageKey.data(), Config::instance()->keyManageKey.length()),
         keyPrefixes(Config::instance()->keyPrefixes.data(), Config::instance()->keyPrefixes.length()),
         keyItem(Config::instance()->keyItem.data(), Config::instance()->keyItem.length()),

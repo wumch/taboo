@@ -71,7 +71,6 @@ inline Closure* Closure::create(const std::string& method, const std::string& ur
 inline void Closure::destroy() throw()
 {
     if (postProcessor) {
-        CS_DUMP((uint64_t)postProcessor);
         MHD_destroy_post_processor(postProcessor);
     }
     if (handler) {
