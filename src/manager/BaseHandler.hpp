@@ -46,7 +46,7 @@ public:
         taboo::BaseHandler()
     {}
 
-    virtual ReplyPtr process()
+    virtual SharedReply process()
     {
         ec_t code = validate();
         if (code == err_ok) {
@@ -83,14 +83,14 @@ protected:
         return (code == err_ok) ? checkSign() : code;
     }
 
-    virtual ReplyPtr _process()
+    virtual SharedReply _process()
     {
-        ResPtr res = deal();
+        SharedResult res = deal();
         return res ? (res->reply ? res->reply : getReply(res->code))
             : getReply(err_unknown);
     }
 
-    virtual ResPtr deal() const = 0;
+    virtual SharedResult deal() const = 0;
 
     ec_t checkSign() const
     {
@@ -112,11 +112,11 @@ protected:
         return sign.empty() ? err_bad_param : err_ok;
     }
 
-    virtual ReplyPtr getReply(ec_t errCode) const
+    virtual SharedReply getReply(ec_t errCode) const
     {
         CS_DUMP(errCode);
         CS_DUMP(replys.size());
-        ReplyPtrMap::const_iterator it = replys.find(errCode);
+        SharedReplyMap::const_iterator it = replys.find(errCode);
         if (it == replys.end()) {
             return errUnknownReply;
         } else {

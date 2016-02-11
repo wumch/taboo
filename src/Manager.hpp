@@ -167,7 +167,7 @@ protected:
             return res;
 
         } else {
-            ReplyPtr reply = static_cast<Closure*>(*conClosure)->handler->process();
+            SharedReply reply = static_cast<Closure*>(*conClosure)->handler->process();
             static_cast<Closure*>(*conClosure)->destroy();
             *conClosure = NULL;
             uint32_t httpStatus;
@@ -176,7 +176,7 @@ protected:
         }
     }
 
-    static MHD_Response* createResponse(const ReplyPtr& reply, uint32_t& httpStatus)
+    static MHD_Response* createResponse(const SharedReply& reply, uint32_t& httpStatus)
     {
         MHD_Response* response = MHD_create_response_from_buffer(reply->content.length(),
             const_cast<char*>(reply->content.data()),

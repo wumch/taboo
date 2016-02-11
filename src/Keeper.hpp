@@ -35,14 +35,14 @@ public:
         return true;
     }
 
-    bool attach(const KeyList& keys, const ItemPtr& item)
+    bool attach(const KeyList& keys, const SharedItem& item)
     {
         AttachCallback cb(farm, item);
         WriteLock lock(Aside::instance()->accessMutex);
         return trie.attach(keys, item->id, cb);
     }
 
-    bool update_item(const std::string& key, const ItemPtr& item)
+    bool update_item(const std::string& key, const SharedItem& item)
     {
         id_t id;
         {
@@ -57,7 +57,7 @@ public:
     }
 
     // TODO: 重前缀 会重复出现
-    bool detach(const KeyList& keys, const ItemPtr& item)
+    bool detach(const KeyList& keys, const SharedItem& item)
     {
         EraseCallback cb(farm, item);
         WriteLock lock(Aside::instance()->accessMutex);
@@ -74,10 +74,10 @@ private:
     {
     private:
         Farm& farm;
-        const ItemPtr& item;
+        const SharedItem& item;
 
     public:
-        AttachCallback(Farm& _farm, const ItemPtr& _item):
+        AttachCallback(Farm& _farm, const SharedItem& _item):
             farm(_farm),
             item(_item)
         {}
@@ -92,10 +92,10 @@ private:
     {
     private:
         Farm& farm;
-        const ItemPtr& item;
+        const SharedItem& item;
 
     public:
-        EraseCallback(Farm& _farm, const ItemPtr& _item):
+        EraseCallback(Farm& _farm, const SharedItem& _item):
             farm(_farm), item(_item)
         {}
 

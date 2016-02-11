@@ -35,31 +35,31 @@ public:
     }
 };
 
-typedef boost::shared_ptr<Item> ItemPtr;
+typedef boost::shared_ptr<Item> SharedItem;
 
-extern ItemPtr makeItem(const char* str);
+extern SharedItem makeItem(const char* str);
 
 inline bool operator==(const Item& lhs, const Item& rhs)
 {
     return lhs.id == rhs.id;
 }
 
-inline bool operator==(const ItemPtr& lhs, const ItemPtr& rhs)
+inline bool operator==(const SharedItem& lhs, const SharedItem& rhs)
 {
     return lhs->id == rhs->id;
 }
 
-class ItemPtrHasher
+class SharedItemHasher
 {
 public:
-    int operator()(const ItemPtr& item) const
+    int operator()(const SharedItem& item) const
     {
         return boost::hash<id_t>()(item->id);
     }
 };
 
-typedef std::vector<ItemPtr> ItemPtrList;
-typedef boost::unordered_map<id_t, ItemPtr> Slot;
+typedef std::vector<SharedItem> SharedItemList;
+typedef boost::unordered_map<id_t, SharedItem> Slot;
 typedef boost::unordered_map<id_t, Slot> SlotMap;
 
 }

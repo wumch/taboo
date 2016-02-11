@@ -24,9 +24,9 @@ bool Config::initialize(int argc, char* argv[])
     {
         try {
             boost::mutex::scoped_lock lock(configLoadMutex);
-            ConfigPtr ptr(new Config);
-            ptr->init(argc, argv);
-            _instance = ptr.release();
+            ConfigPtr config(new Config);
+            config->init(argc, argv);
+            _instance = config.release();
         } catch (const std::logic_error& e) {
             CS_DIE("error: " << e.what());
         } catch (const std::runtime_error& e) {

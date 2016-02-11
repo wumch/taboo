@@ -10,7 +10,7 @@
 
 namespace taboo {
 
-typedef HandlerPtr (*HandlerCreatorFunc)();
+typedef SharedHandler (*HandlerCreatorFunc)();
 
 class Router
 {
@@ -44,7 +44,7 @@ public:
         return true;
     }
 
-    HandlerPtr route(const std::string& method, const std::string& uri) const
+    SharedHandler route(const std::string& method, const std::string& uri) const
     {
         if (uri.empty()) {
             return noRouteHandlerCreator();
@@ -53,7 +53,7 @@ public:
         if (it == handlerMap.end()) {
             return noRouteHandlerCreator();
         }
-        HandlerPtr handler = (it->second)();
+        SharedHandler handler = (it->second)();
         handler->setMeta(method, uri);
         return handler;
     }

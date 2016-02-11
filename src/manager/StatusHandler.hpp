@@ -10,9 +10,9 @@ class StatusHandler:
     public BaseHandler, public taboo::HandlerCreator<StatusHandler>
 {
 public:
-    virtual ResPtr deal() const
+    virtual SharedResult deal() const
     {
-        ResPtr res;
+        SharedResult res;
         return res;
     }
 

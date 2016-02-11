@@ -16,9 +16,9 @@ protected:
         err_detach_item = 203003,
     };
 public:
-    virtual ResPtr deal() const
+    virtual SharedResult deal() const
     {
-        ResPtr res(new Res(err_detach));
+        SharedResult res(new Result(err_detach));
         return res;
     }
 

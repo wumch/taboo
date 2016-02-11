@@ -12,14 +12,14 @@ class Farm
 private:
     SlotMap& slots;
     const Slot empty_slot;
-    const ItemPtr dummy_item;
+    const SharedItem dummy_item;
 
 public:
     explicit Farm(SlotMap& slot_map):
         slots(slot_map)
     {}
 
-    bool attach(id_t id, const ItemPtr& item)
+    bool attach(id_t id, const SharedItem& item)
     {
         SlotMap::iterator it = slots.find(id);
         if (it == slots.end())
@@ -35,7 +35,7 @@ public:
         return false;
     }
 
-    bool detach(id_t id, const ItemPtr& item)
+    bool detach(id_t id, const SharedItem& item)
     {
         SlotMap::iterator it = slots.find(id);
         if (it != slots.end())
@@ -61,7 +61,7 @@ public:
         return it == slots.end() ? empty_slot : it->second;
     }
 
-    const ItemPtr& item(id_t id) const
+    const SharedItem& item(id_t id) const
     {
         SlotMap::iterator it = slots.find(id);
         if (it != slots.end())
@@ -76,7 +76,7 @@ public:
     }
 
 private:
-    bool insert(Slot& slot, const ItemPtr& item) const
+    bool insert(Slot& slot, const SharedItem& item) const
     {
         Slot::iterator pos = slot.find(item->id);
         if (pos == slot.end())

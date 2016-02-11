@@ -39,7 +39,7 @@ public:
     {}
 };
 
-typedef boost::shared_ptr<Reply> ReplyPtr;
+typedef boost::shared_ptr<Reply> SharedReply;
 
 typedef int32_t ec_t;   // error-code type
 
@@ -72,26 +72,26 @@ protected:
     };
     typedef std::map<std::string, std::string, std::less<std::string> > ParamMap;
 
-    struct Res {
+    struct Result {
     public:
-        ReplyPtr reply;
+        SharedReply reply;
         ec_t code;
-        Res():
+        Result():
             code(err_unknown)
         {}
 
-        explicit Res(ec_t errCode):
+        explicit Result(ec_t errCode):
             code(errCode)
         {}
     };
-    typedef boost::shared_ptr<Res> ResPtr;
+    typedef boost::shared_ptr<Result> SharedResult;
 
     static  const std::string methodGet, methodPost;
 
-    static const ReplyPtr errUnknownReply;
+    static const SharedReply errUnknownReply;
 
-    typedef boost::unordered_map<ec_t, ReplyPtr> ReplyPtrMap;
-    static const ReplyPtrMap replys;
+    typedef boost::unordered_map<ec_t, SharedReply> SharedReplyMap;
+    static const SharedReplyMap replys;
 
     const Config* config;
 
@@ -133,14 +133,14 @@ public:
         return addParam(key, std::string(value, valueLength));
     }
 
-    virtual ReplyPtr process() = 0;
+    virtual SharedReply process() = 0;
 
     static void initReplys()
     {
-        const_cast<ReplyPtr&>(errUnknownReply) =
+        const_cast<SharedReply&>(errUnknownReply) =
             genReply(err_unknown, "unknown error", mem_mode_persist);
-        const_cast<ReplyPtrMap&>(replys).insert(
-            std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
+        const_cast<SharedReplyMap&>(replys).insert(
+            std::make_pair<ec_t, SharedReply>(err_unknown, errUnknownReply));
         fillReply(err_process_failed, "failed on processing");
     }
 
@@ -153,10 +153,10 @@ protected:
         return true;
     }
 
-    static ReplyPtr genReply(ec_t errCode, const std::string& errDesc,
+    static SharedReply genReply(ec_t errCode, const std::string& errDesc,
         MemMode memMode = mem_mode_must_copy)
     {
-        ReplyPtr reply(new Reply(memMode));
+        SharedReply reply(new Reply(memMode));
         std::string& content = reply->content;
         content.reserve((9 + 10) + Config::instance()->keyErrCode.length()
             + Config::instance()->keyErrDesc.length() + errDesc.length());
@@ -183,7 +183,7 @@ protected:
     static void fillReply(ec_t errCode, const std::string& errDesc)
     {
         CS_SAY(errCode << ": " << errDesc);
-        const_cast<ReplyPtrMap&>(replys).insert(std::make_pair(errCode,
+        const_cast<SharedReplyMap&>(replys).insert(std::make_pair(errCode,
             genReply(errCode, errDesc, mem_mode_persist)));
     }
 
@@ -204,15 +204,15 @@ protected:
     }
 };
 
-typedef std::auto_ptr<BaseHandler> HandlerPtr;
+typedef std::auto_ptr<BaseHandler> SharedHandler;
 
 template<typename HandlerType>
 class HandlerCreator
 {
 public:
-    static HandlerPtr create()
+    static SharedHandler create()
     {
-        HandlerPtr handler(new HandlerType);
+        SharedHandler handler(new HandlerType);
         return handler;
     }
 };
@@ -221,7 +221,7 @@ class NoRouteHandler:
     public BaseHandler, public HandlerCreator<NoRouteHandler>
 {
 private:
-    const ReplyPtr reply;
+    const SharedReply reply;
 
 public:
     NoRouteHandler():
@@ -229,7 +229,7 @@ public:
             + boost::lexical_cast<std::string, ec_t>(err_no_route) + "\"}", mem_mode_persist))
     {}
 
-    virtual ReplyPtr process()
+    virtual SharedReply process()
     {
         return reply;
     }

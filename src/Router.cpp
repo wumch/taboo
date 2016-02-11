@@ -22,11 +22,11 @@ const std::string BaseHandler::escapedQuotation("\\\"");
 const std::string BaseHandler::methodGet("GET");
 const std::string BaseHandler::methodPost("POST");
 
-const ReplyPtr BaseHandler::errUnknownReply;
+const SharedReply BaseHandler::errUnknownReply;
 
-const BaseHandler::ReplyPtrMap BaseHandler::replys;
+const BaseHandler::SharedReplyMap BaseHandler::replys;
 
-const ReplyPtr manager::AttachHandler::okReply;
+const SharedReply manager::AttachHandler::okReply;
 
 void Router::initHandlerRelyMap()
 {

@@ -25,7 +25,7 @@ private:
 
     mutable FilterChain filter;
 
-    mutable ItemPtrList items;
+    mutable SharedItemList items;
 
 public:
     Seeker():
@@ -33,7 +33,7 @@ public:
         farm(Aside::instance()->farm)
     {}
 
-    const ItemPtrList& seek(const char* _query) const
+    const SharedItemList& seek(const char* _query) const
     {
         items.clear();
         if (Query::rebuild(query, _query) &&

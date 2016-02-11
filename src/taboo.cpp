@@ -28,7 +28,7 @@ void test_trie(const char* query)
         keys.push_back("abcdefg");
         keys.push_back("abcdefghi");
         keys.push_back("abdef");
-        ItemPtr item = makeItem("{\"id\":10086,\"name\":\"wumch\",\"age\":45}");
+        SharedItem item = makeItem("{\"id\":10086,\"name\":\"wumch\",\"age\":45}");
         Keeper::instance()->attach(keys, item);
     }
 
@@ -37,17 +37,9 @@ void test_trie(const char* query)
         keys.push_back("abcdrg");
         keys.push_back("abcdef454i");
         keys.push_back("abdef白入定");
-        ItemPtr item = makeItem("{\"id\":10087,\"name\":\"入定\",\"age\":38}");
+        SharedItem item = makeItem("{\"id\":10087,\"name\":\"入定\",\"age\":38}");
         Keeper::instance()->attach(keys, item);
     }
-
-//    boost::shared_ptr<Seeker> seeker(new Seeker);
-//    const ItemPtrSet& items = seeker->seek(query);
-//    CS_DUMP(items.size());
-//    for (ItemPtrSet::const_iterator it = items.begin(); it != items.end(); ++it) {
-//        CS_DUMP((*it)->id);
-//        CS_DUMP((*it)->dom["name"].GetString());
-//    }
 }
 
 }

@@ -14,25 +14,25 @@ namespace taboo
 {
 
 class BaseFilter;
-typedef boost::shared_ptr<BaseFilter> FilterPtr;
+typedef boost::shared_ptr<BaseFilter> SharedFilter;
 
 class BaseFilter
 {
 protected:
     const Value& attr;
-    FilterPtr next;
+    SharedFilter next;
 
 public:
     explicit BaseFilter(const Value& _attr):
         attr(_attr)
     {}
 
-    virtual bool apply(const ItemPtr& item) const
+    virtual bool apply(const SharedItem& item) const
     {
         return _apply(item) ? (hasNext() ? next->apply(item) : true): false;
     }
 
-    void attach(const FilterPtr& _next)
+    void attach(const SharedFilter& _next)
     {
         next = _next;
     }
@@ -42,7 +42,7 @@ public:
         return false;
     }
 
-    FilterPtr& getNext()
+    SharedFilter& getNext()
     {
         return next;
     }
@@ -53,7 +53,7 @@ public:
     }
 
 protected:
-    virtual bool _apply(const ItemPtr& item) const = 0;
+    virtual bool _apply(const SharedItem& item) const = 0;
 
     bool hasNext() const
     {
@@ -77,7 +77,7 @@ public:
     }
 
 protected:
-    virtual bool _apply(const ItemPtr& item) const
+    virtual bool _apply(const SharedItem& item) const
     {
         return applyRes;
     }
@@ -112,7 +112,7 @@ public:
     }
 
 protected:
-    virtual bool _apply(const ItemPtr& item) const
+    virtual bool _apply(const SharedItem& item) const
     {
         rapidjson::Document::ConstMemberIterator it = item->dom.FindMember(attr);
         if (mustMiss) {
@@ -151,7 +151,7 @@ public:
     }
 
 protected:
-    virtual bool _apply(const ItemPtr& item) const
+    virtual bool _apply(const SharedItem& item) const
     {
         Value::MemberIterator it = item->dom.FindMember(attr);
         if (it != item->dom.MemberEnd()) {
@@ -210,7 +210,7 @@ public:
     }
 
 protected:
-    virtual bool _apply(const ItemPtr& item) const
+    virtual bool _apply(const SharedItem& item) const
     {
         Value::MemberIterator it = item->dom.FindMember(attr);
         if (it != item->dom.MemberEnd()) {
@@ -248,7 +248,7 @@ public:
     }
 
 protected:
-    virtual bool _apply(const ItemPtr& item) const
+    virtual bool _apply(const SharedItem& item) const
     {
         Value::MemberIterator it = item->dom.FindMember(attr);
         if (it != item->dom.MemberEnd()) {
@@ -262,11 +262,11 @@ protected:
 class FilterChain
 {
 protected:
-    FilterPtr filter;
-    FilterPtr exclude;
+    SharedFilter filter;
+    SharedFilter exclude;
 
 public:
-    bool apply(const ItemPtr& item) const
+    bool apply(const SharedItem& item) const
     {
         return (!exclude || !exclude->apply(item)) &&
             (!filter || filter->apply(item));
@@ -280,7 +280,7 @@ public:
     }
 
 private:
-    static void rebuild(FilterPtr& _filter, const Value* cond)
+    static void rebuild(SharedFilter& _filter, const Value* cond)
     {
         if (cond == NULL) {
             _filter.reset();
@@ -294,7 +294,7 @@ private:
     }
 
     // todo: too crude
-    static void byCond(FilterPtr& _filter, const Value* cond)
+    static void byCond(SharedFilter& _filter, const Value* cond)
     {
         BaseFilter* cursor = _filter.get();
         for (rapidjson::Document::ConstMemberIterator it = cond->MemberBegin();
@@ -313,7 +313,7 @@ private:
         }
     }
 
-    static void attach(FilterPtr& _filter, BaseFilter*& cursor, const FilterPtr& next)
+    static void attach(SharedFilter& _filter, BaseFilter*& cursor, const SharedFilter& next)
     {
         if (!_filter) {
             _filter = next;

@@ -24,12 +24,12 @@ protected:
 
     static const uint32_t maxParamNum = 10;
 
-    static const ReplyPtr okReply;
+    static const SharedReply okReply;
 
 protected:
-    virtual ResPtr deal() const
+    virtual SharedResult deal() const
     {
-        ResPtr res(new Res);
+        SharedResult res(new Result);
         do {
             KeyList keys = getKeys();
             if (keys.empty()) {
@@ -42,7 +42,7 @@ protected:
                 res->code = err_bad_param;
                 break;
             }
-            ItemPtr item = taboo::makeItem(it->second.c_str());
+            SharedItem item = taboo::makeItem(it->second.c_str());
             if (!item) {
                 res->code = err_create_item;
                 break;
@@ -90,7 +90,7 @@ protected:
 public:
     static void initReplys()
     {
-        const_cast<ReplyPtr&>(okReply) = genReply(err_ok, "", mem_mode_persist);
+        const_cast<SharedReply&>(okReply) = genReply(err_ok, "", mem_mode_persist);
         fillReply(err_no_keys, "no prefixes supplied");
         fillReply(err_create_item, "failed on creating item");
         fillReply(err_attach, "failed on attach ");

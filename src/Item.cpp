@@ -7,9 +7,9 @@
 namespace taboo
 {
 
-ItemPtr makeItem(const char* str)
+SharedItem makeItem(const char* str)
 {
-    ItemPtr item(new Item), res;
+    SharedItem item(new Item), res;
     item->dom.Parse(str);
     if (CS_BLIKELY(!item->dom.HasParseError())) {
         Value::MemberIterator it = item->dom.FindMember(Aside::instance()->keyId);
