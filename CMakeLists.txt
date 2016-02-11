@@ -2,6 +2,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(taboo)
 
+add_compile_options(-pthread -fomit-frame-pointer -pipe -fno-strict-aliasing -Wall)
 string(TOLOWER "${CMAKE_BUILD_TYPE}" cmake_build_type_lower)
 if (cmake_build_type_lower MATCHES "debug")
     
@@ -14,18 +15,18 @@ if (cmake_build_type_lower MATCHES "debug")
     find_program(clang_path clang++)
     if (clang_path)
         set(CMAKE_CXX_COMPILER ${clang_path})
+        add_compile_options(-Wno-unused-local-typedef)
+    else()
+        add_compile_options(-Wno-unused-local-typedefs -Wno-enum-compare)
     endif()
     
     add_compile_options(-O0 -g3 -DCS_DEBUG=${CS_DEBUG} -ferror-limit=5)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O0 -Wl,-as-needed")
     
 else()
-    add_compile_options(-O3 -DNDEBUG)
+    add_compile_options(-O3 -DNDEBUG -Wno-unused-local-typedefs -Wno-enum-compare)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O2 -Wl,-as-needed")
 endif()
-
-add_compile_options(-pthread -fomit-frame-pointer -pipe -fno-strict-aliasing 
-    -Wall -Wno-unused-local-typedef)
 
 include_directories(libs libs/websocketpp libs/rapidjson/include)
 

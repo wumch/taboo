@@ -19,6 +19,8 @@ protected:
         err_attach_item     = 202005,
     };
 
+    static const uint32_t maxParamNum = 10;
+
     static const ReplyPtr okReply;
 
 protected:
@@ -57,7 +59,7 @@ protected:
 
     virtual ec_t checkParams() const
     {
-        return (!sign.empty()
+        return (!(config->checkSign && sign.empty())
            && params.find(config->keyManageKey) != params.end()
            && params.find(config->keyPrefixes) != params.end()
            && params.find(config->keyItem) != params.end()) ?

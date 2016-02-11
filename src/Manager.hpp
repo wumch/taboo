@@ -169,16 +169,27 @@ protected:
 
         } else {
             ReplyPtr reply = static_cast<Closure*>(*conClosure)->handler->process();
+            static_cast<Closure*>(*conClosure)->destroy();
             *conClosure = NULL;
-            return MHD_queue_response(connection, 200, createResponse(reply));
+            uint32_t httpStatus;
+            MHD_Response* response = createResponse(reply, httpStatus);
+            return MHD_queue_response(connection, httpStatus, response);
         }
     }
 
-    static MHD_Response* createResponse(const ReplyPtr& reply)
+    static MHD_Response* createResponse(const ReplyPtr& reply, uint32_t& httpStatus)
     {
-        return MHD_create_response_from_buffer(reply->content.length(),
+        MHD_Response* response = MHD_create_response_from_buffer(reply->content.length(),
             const_cast<char*>(reply->content.data()),
             static_cast<MHD_ResponseMemoryMode>(reply->memMode));
+        httpStatus = 500;
+        if (CS_LIKELY(response)) {
+            if (CS_BLIKELY(MHD_add_response_header(response, "Content-Type",
+                "application/json") == MHD_YES)) {
+                httpStatus = 200;
+            }
+        }
+        return response;
     }
 
     static int postParamIterator(void* closure, MHD_ValueKind kind, const char* key,

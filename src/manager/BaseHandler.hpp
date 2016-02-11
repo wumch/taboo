@@ -27,8 +27,9 @@ protected:
     enum {
         err_bad_request_method  = 200001,
         err_bad_request         = 200002,
-        err_bad_param           = 200003,
-        err_bad_sign            = 200004,
+        err_too_many_param      = 200003,
+        err_bad_param           = 200004,
+        err_bad_sign            = 200005,
     };
 
     typedef boost::unordered_map<ec_t, ReplyPtr> ReplyPtrMap;
@@ -58,8 +59,8 @@ public:
     {
         const_cast<ReplyPtr&>(errUnknownReply) =
             genReply(err_unknown, "unknown error", mem_mode_persist);
-        ReplyPtrMap& map = const_cast<ReplyPtrMap&>(replys);
-        map.insert(std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
+        const_cast<ReplyPtrMap&>(replys).insert(
+            std::make_pair<ec_t, ReplyPtr>(err_unknown, errUnknownReply));
         fillReply(err_bad_request_method, "request method not allowed");
         fillReply(err_bad_request, "bad request");
         fillReply(err_bad_sign, "bad sign");

@@ -39,6 +39,7 @@ public:
             }
             cb(slotId);
         }
+        CS_DUMP(da.size());
         return attached;
     }
 
