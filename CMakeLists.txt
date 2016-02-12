@@ -25,7 +25,7 @@ if (cmake_build_type_lower MATCHES "debug")
     
 else()
     add_compile_options(-O3 -DNDEBUG -Wno-unused-local-typedefs -Wno-enum-compare)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O2 -Wl,-as-needed")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O3 -Wl,-as-needed")
 endif()
 
 include_directories(libs libs/websocketpp libs/rapidjson/include)
