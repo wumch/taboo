@@ -56,6 +56,8 @@ public:
     bool storeOnExit, restoreOnStart;
     boost::filesystem::path trieFile, itemsFile;
 
+    bool queryEnableHttp, queryEnableWs;
+
     std::string manageHost, queryHost;
     uint16_t managePort, queryPort;
 
@@ -71,7 +73,8 @@ public:
     std::size_t maxManageConnections;
     std::size_t maxQueryConnections;
 
-    std::size_t manageConnectionMemoryLimit, manageConnectionReadBuffer;
+    std::size_t manageConnectionMemoryLimit, manageRecvBuffer, manageSendBuffer,
+        queryRecvBuffer, querySendBuffer;
     std::time_t manageRecvTimeout, manageSendTimeout,
         queryRecvTimeout, querySendTimeout;
     std::time_t connectionMaxIdle, connectionCheckInterval;
@@ -85,9 +88,11 @@ public:
     bool checkSign;
     std::string manageKey, manageSecret, signHyphen, signDelimiter;
 
-    std::string keyManageKey, keySign, keyItem,
-        keyId, keyPrefixes, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
+    std::string keyManageKey, keySign, keyPrefixes, keyItem, keyUpsert, keyId,
+        keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyErrCode, keyErrDesc;
+
+    std::string queryVisibleKeys;
 };
 
 }

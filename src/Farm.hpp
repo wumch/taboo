@@ -19,17 +19,18 @@ public:
         slots(slot_map)
     {}
 
-    bool attach(id_t id, const SharedItem& item)
+    bool attach(id_t id, const SharedItem& item, bool upsert = true)
     {
         SlotMap::iterator it = slots.find(id);
-        if (it == slots.end())
-        {
+        if (it == slots.end()) {
              it = slots.insert(std::make_pair(id, empty_slot)).first;
         }
         Slot::iterator pos = it->second.find(item->id);
-        if (pos == it->second.end())
-        {
+        if (pos == it->second.end()) {
             it->second.insert(std::make_pair(item->id, item));
+            return true;
+        } else if (upsert) {
+            pos->second = item;
             return true;
         }
         return false;

@@ -10,11 +10,19 @@ Router* Router::_instance = new Router;
 
 void Router::initHandlerMap()
 {
-    HandlerMap& handlers = const_cast<HandlerMap&>(handlerMap);
-    handlers.insert(std::make_pair(std::string("/manage/status"), &manager::StatusHandler::create));
-    handlers.insert(std::make_pair(std::string("/manage/attach"), &manager::AttachHandler::create));
-    handlers.insert(std::make_pair(std::string("/manage/detach"), manager::DetachHandler::create));
-    handlers.insert(std::make_pair(std::string("/manage/erase"), &manager::DetachHandler::create));
+    HandlerCreatorMap& creators = const_cast<HandlerCreatorMap&>(handlerCreatorMap);
+    creators.insert(std::make_pair(std::string("/manage/status"), &manager::StatusHandler::create));
+    // params: update=1
+    creators.insert(std::make_pair(std::string("/manage/attach"), &manager::AttachHandler::create));
+
+    creators.insert(std::make_pair(std::string("/manage/detach"), manager::DetachHandler::create));
+
+    creators.insert(std::make_pair(std::string("/manage/erase"), &manager::DetachHandler::create));
+
+    // force=0
+//    creators.insert(std::make_pair(std::string("/manage/tidy"), &manager::DetachHandler::create));
+
+      // params: force=0
 //    handlers.insert(std::make_pair(std::string("/manage/store"), &manager::StoreHandler::create));
 }
 

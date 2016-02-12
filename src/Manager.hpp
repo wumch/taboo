@@ -154,7 +154,7 @@ protected:
                 &Manager::getParamIterator, closure);
             if (closure->handler->isPost()) {
                 closure->postProcessor = MHD_create_post_processor(connection,
-                    closure->config->manageConnectionReadBuffer,
+                    closure->config->manageRecvBuffer,
                     &Manager::postParamIterator, *conClosure);
                 ok = !!closure->postProcessor;
             }

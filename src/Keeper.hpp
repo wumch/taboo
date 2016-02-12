@@ -35,11 +35,11 @@ public:
         return true;
     }
 
-    bool attach(const KeyList& keys, const SharedItem& item)
+    bool attach(const KeyList& keys, const SharedItem& item, bool upsertItem)
     {
-        AttachCallback cb(farm, item);
+        AttachCallback cb(farm, item, upsertItem);
         WriteLock lock(Aside::instance()->accessMutex);
-        return trie.attach(keys, item->id, cb);
+        return (trie.attach(keys, item->id, cb) && cb.attached) || upsertItem;
     }
 
     bool update_item(const std::string& key, const SharedItem& item)
@@ -51,7 +51,7 @@ public:
         }
         if (id) {
             WriteLock lock(Aside::instance()->accessMutex);
-            return farm.detach(id, item);
+            return farm.attach(id, item);
         }
         return false;
     }
@@ -75,16 +75,18 @@ private:
     private:
         Farm& farm;
         const SharedItem& item;
+        const bool upsert;
 
     public:
-        AttachCallback(Farm& _farm, const SharedItem& _item):
-            farm(_farm),
-            item(_item)
+        mutable bool attached;
+
+        AttachCallback(Farm& _farm, const SharedItem& _item, bool _upsert):
+            farm(_farm), item(_item), upsert(_upsert)
         {}
 
         void operator()(id_t id) const
         {
-            farm.attach(id, item);
+            attached = farm.attach(id, item, upsert);
         }
     };
 

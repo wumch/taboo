@@ -55,23 +55,23 @@ private:
     {
     private:
         typedef boost::unordered_set<id_t> ItemIdSet;
+        mutable ItemIdSet recorded;
         const Seeker* const seeker;
-        ItemIdSet recorded;
         const std::size_t maxMatch;
-        std::size_t iterated;
+        mutable std::size_t iterated;
 
     public:
         ItemCallback(const Seeker* _seeker, std::size_t _maxMatch):
             seeker(_seeker), maxMatch(_maxMatch), iterated(0)
         {}
 
-        bool operator()(id_t slotId)
+        bool operator()(id_t slotId) const
         {
             return Config::instance()->maxIterations < ++iterated ? false : pump(slotId);
         }
 
     private:
-        bool pump(id_t slotId)
+        bool pump(id_t slotId) const
         {
             const Slot& slot = seeker->farm.slot(slotId);
             if (!slot.empty()) {

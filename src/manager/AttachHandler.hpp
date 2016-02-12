@@ -17,7 +17,7 @@ protected:
     enum {
         err_no_keys         = ECA::ECC<1>::value,
         err_create_item     = ECA::ECC<2>::value,
-        err_attach          = ECA::ECC<3>::value,
+        err_already_exists  = ECA::ECC<3>::value,
         err_attach_keys     = ECA::ECC<4>::value,
         err_attach_item     = ECA::ECC<5>::value,
     };
@@ -37,26 +37,27 @@ protected:
                 break;
             }
 
-            ParamMap::const_iterator it = params.find(config->keyItem);
-            if (it == params.end()) {
+            ParamMap::const_iterator itItem = params.find(config->keyItem);
+            if (itItem == params.end()) {
                 res->code = err_bad_param;
                 break;
             }
-            SharedItem item = taboo::makeItem(it->second.c_str());
+            SharedItem item = taboo::makeItem(itItem->second.c_str());
             if (!item) {
                 res->code = err_create_item;
                 break;
             }
 
-            if (!Keeper::instance()->attach(keys, item)) {
-                res->code = err_attach;
+            ParamMap::const_iterator itUpsert = params.find(config->keyUpsert);
+            bool upsert = itUpsert == params.end() || itUpsert->second.empty() || itUpsert->second[0] != '0';
+            if (!Keeper::instance()->attach(keys, item, upsert)) {
+                res->code = err_already_exists;
                 break;
             }
             res->code = err_ok;
             res->reply = okReply;
 
         } while (false);
-        CS_DUMP(res->code);
         return res;
     }
 
@@ -93,7 +94,7 @@ public:
         const_cast<SharedReply&>(okReply) = genReply(err_ok, "", mem_mode_persist);
         fillReply(err_no_keys, "no prefixes supplied");
         fillReply(err_create_item, "failed on creating item");
-        fillReply(err_attach, "failed on attach ");
+        fillReply(err_already_exists, "all keys already exist or item already exists");
         fillReply(err_attach_keys, "failed on attaching prefixes");
         fillReply(err_attach_item, "failed on attaching item");
     }

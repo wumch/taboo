@@ -212,10 +212,12 @@ void Config::initDesc()
             "key name for 'manage-key' of manage requests, default is 'key'.")
         ("key-sign", boost::program_options::value<std::string>()->default_value(("sign")),
             "key name for 'sign' of manage requests, default is 'sign'.")
-        ("key-item", boost::program_options::value<std::string>()->default_value(("item")),
-            "key name for 'item' of manage requests, default is 'item'.")
         ("key-prefixes", boost::program_options::value<std::string>()->default_value(("prefixes")),
             "key name for 'prefixes' of items in manage requests, default is 'prefixes'.")
+        ("key-item", boost::program_options::value<std::string>()->default_value(("item")),
+            "key name for 'item' of manage requests, default is 'item'.")
+        ("key-upsert-item", boost::program_options::value<std::string>()->default_value(("upsert")),
+            "key name for 'upsert-item' of manage requests, default is 'upsert'.")
         ("key-id", boost::program_options::value<std::string>()->default_value(("id")),
             "key name for 'id' of items, default is 'id'.")
 
@@ -278,7 +280,7 @@ void Config::loadOptions()
     backlog = toInteger<uint32_t>("listen-backlog");
 
     manageConnectionMemoryLimit = toInteger<std::size_t>("manage-connection-memory-limit");
-    manageConnectionReadBuffer = toInteger<std::size_t>("manage-connection-read-buffer");
+    manageRecvBuffer = toInteger<std::size_t>("manage-connection-read-buffer");
     maxManageConnections = toInteger<std::size_t>("max-manage-connections");
     maxQueryConnections = toInteger<std::size_t>("max-query-connections");
 
@@ -320,8 +322,9 @@ void Config::loadOptions()
 
     keyManageKey = to<std::string>("key-manage-key");
     keySign = to<std::string>("key-sign");
-    keyItem = to<std::string>("key-item");
     keyPrefixes = to<std::string>("key-prefixes");
+    keyItem = to<std::string>("key-item");
+    keyUpsert = to<std::string>("key-upsert-item");
     keyId = to<std::string>("key-id");
 
     keyPrefix = to<std::string>("key-prefix");
@@ -363,7 +366,7 @@ void Config::loadOptions()
         _TABOO_OUT_CONFIG_OPTION(backlog)
 
         _TABOO_OUT_CONFIG_OPTION(manageConnectionMemoryLimit)
-        _TABOO_OUT_CONFIG_OPTION(manageConnectionReadBuffer)
+        _TABOO_OUT_CONFIG_OPTION(manageRecvBuffer)
         _TABOO_OUT_CONFIG_OPTION(maxManageConnections)
         _TABOO_OUT_CONFIG_OPTION(maxQueryConnections)
 
@@ -392,10 +395,11 @@ void Config::loadOptions()
         _TABOO_OUT_CONFIG_OPTION(signDelimiter)
         _TABOO_OUT_CONFIG_OPTION(keyManageKey)
         _TABOO_OUT_CONFIG_OPTION(keySign)
+        _TABOO_OUT_CONFIG_OPTION(keyPrefixes)
         _TABOO_OUT_CONFIG_OPTION(keyItem)
+        _TABOO_OUT_CONFIG_OPTION(keyUpsert)
         _TABOO_OUT_CONFIG_OPTION(keyId)
 
-        _TABOO_OUT_CONFIG_OPTION(keyPrefixes)
         _TABOO_OUT_CONFIG_OPTION(keyPrefix)
         _TABOO_OUT_CONFIG_OPTION(keyFilters)
         _TABOO_OUT_CONFIG_OPTION(keyExcludes)

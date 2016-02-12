@@ -149,7 +149,14 @@ public:
 protected:
     virtual bool addParam(const std::string& key, const std::string& value)
     {
-        params.insert(std::make_pair(key, value));
+        if (reviewParam(key, value)) {
+            params.insert(std::make_pair(key, value));
+        }
+        return true;
+    }
+
+    virtual bool reviewParam(const std::string& key, const std::string& value)
+    {
         return true;
     }
 

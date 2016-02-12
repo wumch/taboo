@@ -17,16 +17,11 @@ class Router
 private:
     static Router* _instance;
 
-    typedef boost::unordered_map<std::string, HandlerCreatorFunc> HandlerMap;
-
-    const Config* config;
-
-    HandlerMap handlerMap;
-
+    typedef boost::unordered_map<std::string, HandlerCreatorFunc> HandlerCreatorMap;
+    HandlerCreatorMap handlerCreatorMap;
     HandlerCreatorFunc noRouteHandlerCreator;
 
     Router():
-        config(Config::instance()),
         noRouteHandlerCreator(&NoRouteHandler::create)
     {
         initHandlerMap();
@@ -49,8 +44,8 @@ public:
         if (uri.empty()) {
             return noRouteHandlerCreator();
         }
-        HandlerMap::const_iterator it = handlerMap.find(uri);
-        if (it == handlerMap.end()) {
+        HandlerCreatorMap::const_iterator it = handlerCreatorMap.find(uri);
+        if (it == handlerCreatorMap.end()) {
             return noRouteHandlerCreator();
         }
         SharedHandler handler = (it->second)();

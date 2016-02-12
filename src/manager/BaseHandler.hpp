@@ -34,7 +34,7 @@ protected:
     enum {
         err_bad_request_method  = ECA::ECC<1>::value,
         err_bad_request         = ECA::ECC<2>::value,
-        err_too_many_param      = ECA::ECC<3>::value,
+        err_too_many_params     = ECA::ECC<3>::value,
         err_bad_param           = ECA::ECC<4>::value,
         err_bad_sign            = ECA::ECC<5>::value,
     };
@@ -67,13 +67,17 @@ public:
     virtual ~BaseHandler() {}
 
 protected:
-    virtual bool addParam(const std::string& key, const std::string& value)
+    virtual bool reviewParam(const std::string& key, const std::string& value)
     {
-        if (key == Config::instance()->keySign) {
+        if (key == config->keySign) {
             sign = value;
-        } else {
-            params.insert(std::make_pair(key, value));
+            return false;
         }
+        return _reviewParam(key, value);
+    }
+
+    virtual bool _reviewParam(const std::string& key, const std::string& value)
+    {
         return true;
     }
 
