@@ -106,12 +106,12 @@ public:
             Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyFields);
             if (it != query.body.MemberEnd()) {
                 if (it->value.IsArray()) {
-                    for (Value::ConstMemberIterator i = it->value.MemberBegin(); i != it->value.MemberEnd(); ++i) {
-                        if (!i->value.IsString()) {
+                    for (Value::ConstValueIterator i = it->value.Begin(); i != it->value.End(); ++i) {
+                        if (!i->IsString()) {
                             CS_SAY("bad fields");
                             return false;
                         }
-                        query.fields.insert(&i->value);
+                        query.fields.insert(&*i);
                     }
                 } else if (it->value.IsString()) {
                     query.fields.insert(&it->value);

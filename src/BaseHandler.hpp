@@ -86,7 +86,7 @@ protected:
     };
     typedef boost::shared_ptr<Result> SharedResult;
 
-    static  const std::string methodGet, methodPost;
+    static  const std::string methodGet, methodPost, methodOptions;
 
     static const SharedReply errUnknownReply;
 

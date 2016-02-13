@@ -21,6 +21,8 @@ void Router::initHandlerMap()
     // todo: How to clean an item once all it's prefixes are lost ?
     creators.insert(std::make_pair(std::string("/manage/erase"), &manager::DetachHandler::create));
 
+    creators.insert(std::make_pair(std::string("/manage/get_access_token"), &manager::DetachHandler::create));
+
     creators.insert(std::make_pair(std::string("/query/predict"), &query::PredictHandler::create));
 
     // force=0
@@ -33,6 +35,7 @@ void Router::initHandlerMap()
 const std::string BaseHandler::escapedQuotation("\\\"");
 const std::string BaseHandler::methodGet("GET");
 const std::string BaseHandler::methodPost("POST");
+const std::string BaseHandler::methodOptions("OPTIONS");
 
 const SharedReply BaseHandler::errUnknownReply;
 
