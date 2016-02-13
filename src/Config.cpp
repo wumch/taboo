@@ -190,14 +190,21 @@ void Config::initDesc()
         ("listen-backlog", po::value<std::string>()->default_value("1K"),
             "listen backlog, default is 1K.")
 
-        ("manage-connection-memory-limit", po::value<std::string>()->default_value("256K"),
-            "memory size limit per manage connection, 0 is unlimited, default is 256K.")
-        ("manage-connection-read-buffer", po::value<std::string>()->default_value("128K"),
-            "size of read buffer for manage connections, default is 128K.")
         ("max-manage-connections", po::value<std::string>()->default_value("10K"),
             "max manage connections, default 10K.")
         ("max-query-connections", po::value<std::string>()->default_value("1M"),
             "max query connections, default 1M.")
+
+        ("manage-connection-memory-limit", po::value<std::string>()->default_value("256K"),
+            "memory size limit per manage connection, 0 is unlimited, default is 256K.")
+        ("manage-connection-recv-buffer", po::value<std::string>()->default_value("128K"),
+            "recv buffer size for manage connections, default is 128K.")
+        ("manage-connection-send-buffer", po::value<std::string>()->default_value("128K"),
+            "send buffer size for manage connections, default is 128K.")
+        ("query-connection-recv-buffer", po::value<std::string>()->default_value("128K"),
+            "send buffer size for query connections, default is 128K.")
+        ("query-connection-send-buffer", po::value<std::string>()->default_value("4K"),
+            "send buffer size for query connections, default is 4K.")
 
         ("manage-receive-timeout", po::value<std::time_t>()->default_value(30),
             "receive-timeout for manage requests (second), 0 is unlimited, default is 30s.")
@@ -322,10 +329,14 @@ void Config::loadOptions()
     tcpNodelay = to<bool>("tcp-nodelay");
     backlog = toInteger<uint32_t>("listen-backlog");
 
-    manageConnectionMemoryLimit = toInteger<std::size_t>("manage-connection-memory-limit");
-    manageRecvBuffer = toInteger<std::size_t>("manage-connection-read-buffer");
     maxManageConnections = toInteger<std::size_t>("max-manage-connections");
     maxQueryConnections = toInteger<std::size_t>("max-query-connections");
+
+    manageConnectionMemoryLimit = toInteger<std::size_t>("manage-connection-memory-limit");
+    manageRecvBuffer = toInteger<std::size_t>("manage-connection-recv-buffer");
+    manageSendBuffer = toInteger<std::size_t>("manage-connection-send-buffer");
+    queryRecvBuffer = toInteger<std::size_t>("query-connection-recv-buffer");
+    querySendBuffer = toInteger<std::size_t>("query-connection-send-buffer");
 
     manageRecvTimeout = to<std::time_t>("manage-receive-timeout");
     manageSendTimeout = to<std::time_t>("manage-send-timeout");
@@ -418,10 +429,14 @@ void Config::loadOptions()
         _TABOO_OUT_CONFIG_OPTION(tcpNodelay)
         _TABOO_OUT_CONFIG_OPTION(backlog)
 
-        _TABOO_OUT_CONFIG_OPTION(manageConnectionMemoryLimit)
-        _TABOO_OUT_CONFIG_OPTION(manageRecvBuffer)
         _TABOO_OUT_CONFIG_OPTION(maxManageConnections)
         _TABOO_OUT_CONFIG_OPTION(maxQueryConnections)
+
+        _TABOO_OUT_CONFIG_OPTION(manageConnectionMemoryLimit)
+        _TABOO_OUT_CONFIG_OPTION(manageRecvBuffer)
+        _TABOO_OUT_CONFIG_OPTION(manageSendBuffer)
+        _TABOO_OUT_CONFIG_OPTION(queryRecvBuffer)
+        _TABOO_OUT_CONFIG_OPTION(querySendBuffer)
 
         _TABOO_OUT_CONFIG_OPTION(queryRecvTimeout)
         _TABOO_OUT_CONFIG_OPTION(querySendTimeout)

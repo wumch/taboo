@@ -40,9 +40,7 @@ public:
             CS_SAY("bad query");
             return errBadQueryReply;
         }
-        std::string res = predict(query);
-        CS_DUMP(res);
-        return genReply(err_ok, res);
+        return SharedReply(new Reply(predict(query), mem_mode_must_copy));
     }
 
     static void initReplys()

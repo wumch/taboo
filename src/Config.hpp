@@ -79,7 +79,8 @@ public:
     std::size_t maxManageConnections;
     std::size_t maxQueryConnections;
 
-    std::size_t manageConnectionMemoryLimit, manageRecvBuffer, manageSendBuffer,
+    std::size_t manageConnectionMemoryLimit,
+        manageRecvBuffer, manageSendBuffer,
         queryRecvBuffer, querySendBuffer;
     std::time_t manageRecvTimeout, manageSendTimeout,
         queryRecvTimeout, querySendTimeout;

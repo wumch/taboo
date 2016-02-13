@@ -10,29 +10,7 @@
 #include "stage/math.hpp"
 #include "Aside.hpp"
 
-namespace taboo
-{
-
-class ValuePtrHasher
-{
-public:
-    int operator()(const Value* value) const
-    {
-        return value ? ValueHasher()(*value) : boost::hash<uint8_t>()(0);
-    }
-};
-
-class ValuePtrEqualer
-{
-public:
-    bool operator()(const Value* lhs, const Value* rhs) const
-    {
-        return *lhs == *rhs;
-    }
-};
-
-typedef boost::unordered_set<const Value*, ValuePtrHasher, ValuePtrEqualer> ValuePtrSet;
-
+namespace taboo {
 
 class Query
 {
@@ -63,6 +41,7 @@ public:
             LOG_EVERY_N(ERROR, 10) << "failed on build query: "
                 << rapidjson::GetParseError_En(query.body.GetParseError())
                 << ", JSON: " << str;
+            CS_DUMP("bad json for query");
             return false;
         }
 
@@ -171,14 +150,14 @@ public:
         query.fieldsAll = false;
         if (aside->queryInvisibleFields.empty()) {
             if (query.fields.empty()) {
-                for (ValueSet::const_iterator it = aside->queryVisibleFields.begin();
+                for (ValuePtrSet::const_iterator it = aside->queryVisibleFields.begin();
                     it != aside->queryVisibleFields.end(); ++it) {
-                    query.fields.insert(&*it);
+                    query.fields.insert(*it);
                 }
             } else {
                 for (ValuePtrSet::const_iterator it = query.fields.begin();
                     it != query.fields.end(); ++it) {
-                    if (aside->queryVisibleFields.find(**it) == aside->queryVisibleFields.end()) {
+                    if (aside->queryVisibleFields.find(*it) == aside->queryVisibleFields.end()) {
                         it = query.fields.erase(it);
                     }
                 }
@@ -186,7 +165,7 @@ public:
         } else {
             for (ValuePtrSet::iterator it = query.fields.begin();
                 it != query.fields.end(); ++it) {
-                if (aside->queryInvisibleFields.find(**it) != aside->queryInvisibleFields.end()) {
+                if (aside->queryInvisibleFields.find(*it) != aside->queryInvisibleFields.end()) {
                     it = query.fields.erase(it);
                 }
             }

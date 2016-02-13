@@ -20,36 +20,48 @@ namespace taboo {
 typedef boost::shared_lock<boost::shared_mutex> ReadLock;
 typedef boost::unique_lock<boost::shared_mutex> WriteLock;
 
-class ValueHasher
+class ValuePtrHasher
 {
 public:
-    int operator()(const Value& value) const
+    int operator()(const Value* value) const
     {
-        if (value.IsInt()) {
-            return boost::hash<int64_t>()(value.GetInt64());
-        } else if (value.IsString()) {
-            return stage::SDBMHash()(value.GetString(), value.GetStringLength());
-        } else if (value.IsNull()) {
+        if (value->IsInt()) {
+            return boost::hash<int64_t>()(value->GetInt64());
+        } else if (value->IsString()) {
+            return stage::SDBMHash()(value->GetString(), value->GetStringLength());
+        } else if (value->IsNull()) {
             return boost::hash<uint8_t>()(0);
-        } else if (value.IsBool()) {
-            return boost::hash<bool>()(value.GetBool());;
-        } else if (value.IsDouble()) {
-            return boost::hash<double>()(value.GetDouble());;
+        } else if (value->IsBool()) {
+            return boost::hash<bool>()(value->GetBool());;
+        } else if (value->IsDouble()) {
+            return boost::hash<double>()(value->GetDouble());;
         }
         return boost::hash<uint8_t>()(0);
     }
 };
 
-typedef boost::unordered_set<Value, ValueHasher> ValueSet;
+class ValuePtrEqualer
+{
+public:
+    bool operator()(const Value* lhs, const Value* rhs) const
+    {
+        return *lhs == *rhs;
+    }
+};
+
+typedef boost::unordered_set<const Value*, ValuePtrHasher, ValuePtrEqualer> ValuePtrSet;
 
 class Aside
 {
+private:
+    const Config* config;
+
 public:
     const Value keyManageKey, keyPrefixes, keyItem, keyId,
         keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyErrCode, keyErrDesc;
 
-    ValueSet queryVisibleFields, queryInvisibleFields;
+    ValuePtrSet queryVisibleFields, queryInvisibleFields;
     bool queryVisibleAll;
 
     SlotMap slots;
@@ -69,29 +81,41 @@ private:
     static Aside* _instance;
 
     Aside():
-        keyManageKey(Config::instance()->keyManageKey.data(), Config::instance()->keyManageKey.length()),
-        keyPrefixes(Config::instance()->keyPrefixes.data(), Config::instance()->keyPrefixes.length()),
-        keyItem(Config::instance()->keyItem.data(), Config::instance()->keyItem.length()),
-        keyId(Config::instance()->keyId.data(), Config::instance()->keyId.length()),
-        keyPrefix(Config::instance()->keyPrefix.data(), Config::instance()->keyPrefix.length()),
-        keyFilters(Config::instance()->keyFilters.data(), Config::instance()->keyFilters.length()),
-        keyExcludes(Config::instance()->keyExcludes.data(), Config::instance()->keyExcludes.length()),
-        keyFields(Config::instance()->keyFields.data(), Config::instance()->keyFields.length()),
-        keyNum(Config::instance()->keyNum.data(), Config::instance()->keyNum.length()),
-        keyErrCode(Config::instance()->keyErrCode.data(), Config::instance()->keyErrCode.length()),
-        keyErrDesc(Config::instance()->keyErrDesc.data(), Config::instance()->keyErrDesc.length()),
-        farm(slots)
-    {}
+        config(Config::instance()),
+        keyManageKey(config->keyManageKey.data(), config->keyManageKey.length()),
+        keyPrefixes(config->keyPrefixes.data(), config->keyPrefixes.length()),
+        keyItem(config->keyItem.data(), config->keyItem.length()),
+        keyId(config->keyId.data(), config->keyId.length()),
+        keyPrefix(config->keyPrefix.data(), config->keyPrefix.length()),
+        keyFilters(config->keyFilters.data(), config->keyFilters.length()),
+        keyExcludes(config->keyExcludes.data(), config->keyExcludes.length()),
+        keyFields(config->keyFields.data(), config->keyFields.length()),
+        keyNum(config->keyNum.data(), config->keyNum.length()),
+        keyErrCode(config->keyErrCode.data(), config->keyErrCode.length()),
+        keyErrDesc(config->keyErrDesc.data(), config->keyErrDesc.length()),
+        queryVisibleAll(config->queryVisibleAll), farm(slots)
+    {
+        if (!queryVisibleAll) {
+            if (!config->queryVisibleFields.empty() &&
+                !(config->queryVisibleFields.size() == 1 && *config->queryVisibleFields.begin() == "*")) {
+                for (StringList::const_iterator it = config->queryVisibleFields.begin();
+                    it != config->queryVisibleFields.end(); ++it) {
+                    queryVisibleFields.insert(new Value(it->data(), it->length()));
+                }
+            }
+            if (!config->queryInvisibleFields.empty()) {
+                for (StringList::const_iterator it = config->queryInvisibleFields.begin();
+                    it != config->queryInvisibleFields.end(); ++it) {
+                    queryInvisibleFields.insert(new Value(it->data(), it->length()));
+                }
+            }
+        }
+    }
 
     friend int ::main(int, char*[]);
     static bool initialize()
     {
         _instance = new Aside;
-        const Config* config = Config::instance();
-        for (StringList::const_iterator it = config->queryVisibleFields.begin(); it != config->queryVisibleFields.end(); ++it) {
-            Value field(it->data(), it->length());
-            _instance->queryVisibleFields.insert(field.Move());
-        }
         return _instance->_initialize();
     }
 

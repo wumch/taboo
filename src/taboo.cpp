@@ -29,8 +29,7 @@ void test_trie(const char* query)
         keys.push_back("abcdefghi");
         keys.push_back("abdef");
         SharedItem item = makeItem("{\"id\":10086,\"name\":\"wumch\",\"age\":45}");
-        bool attached = Keeper::instance()->attach(keys, item, true);
-        CS_DUMP(attached);
+        Keeper::instance()->attach(keys, item, true);
     }
 
     {
@@ -39,8 +38,7 @@ void test_trie(const char* query)
         keys.push_back("abcdef454i");
         keys.push_back("abdef白入定");
         SharedItem item = makeItem("{\"id\":10087,\"name\":\"入定\",\"age\":38}");
-        bool attached = Keeper::instance()->attach(keys, item, true);
-        CS_DUMP(attached);
+        Keeper::instance()->attach(keys, item, true);
     }
 }
 
