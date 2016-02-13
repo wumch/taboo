@@ -17,12 +17,13 @@ void Router::initHandlerMap()
 
     creators.insert(std::make_pair(std::string("/manage/detach"), manager::DetachHandler::create));
 
+    // todo: How to clean an item once all it's prefixes are lost ?
     creators.insert(std::make_pair(std::string("/manage/erase"), &manager::DetachHandler::create));
 
     // force=0
 //    creators.insert(std::make_pair(std::string("/manage/tidy"), &manager::DetachHandler::create));
 
-      // params: force=0
+    // params: force=0
 //    handlers.insert(std::make_pair(std::string("/manage/store"), &manager::StoreHandler::create));
 }
 

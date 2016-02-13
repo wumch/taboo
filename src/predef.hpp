@@ -4,4 +4,4 @@
 #include "stage/meta.hpp"
 #include <glog/logging.h>
 
-#define TABOO_HOME_PAGE  "https://github.com/wumch/taboo/wiki"
+#define TABOO_WIKI_LINK  "https://github.com/wumch/taboo/wiki"

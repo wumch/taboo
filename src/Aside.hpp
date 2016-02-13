@@ -5,6 +5,8 @@
 #include <boost/pool/object_pool.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/lock_types.hpp>
+#include <boost/unordered_set.hpp>
+#include "stage/hash.hpp"
 #include "Config.hpp"
 #include "Farm.hpp"
 #include "predef.hpp"
@@ -18,12 +20,37 @@ namespace taboo {
 typedef boost::shared_lock<boost::shared_mutex> ReadLock;
 typedef boost::unique_lock<boost::shared_mutex> WriteLock;
 
+class ValueHasher
+{
+public:
+    int operator()(const Value& value) const
+    {
+        if (value.IsInt()) {
+            return boost::hash<int64_t>()(value.GetInt64());
+        } else if (value.IsString()) {
+            return stage::SDBMHash()(value.GetString(), value.GetStringLength());
+        } else if (value.IsNull()) {
+            return boost::hash<uint8_t>()(0);
+        } else if (value.IsBool()) {
+            return boost::hash<bool>()(value.GetBool());;
+        } else if (value.IsDouble()) {
+            return boost::hash<double>()(value.GetDouble());;
+        }
+        return boost::hash<uint8_t>()(0);
+    }
+};
+
+typedef boost::unordered_set<Value, ValueHasher> ValueSet;
+
 class Aside
 {
 public:
     const Value keyManageKey, keyPrefixes, keyItem, keyId,
         keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyErrCode, keyErrDesc;
+
+    ValueSet queryVisibleFields, queryInvisibleFields;
+    bool queryVisibleAll;
 
     SlotMap slots;
 

@@ -3,14 +3,18 @@
 
 #include "predef.hpp"
 #include <string>
+#include <vector>
 #include <boost/thread/mutex.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
 
 extern int main(int, char*[]);
 
-namespace taboo
-{
+namespace po = boost::program_options;
+
+namespace taboo {
+
+typedef std::vector<std::string> StringList;
 
 class Config
 {
@@ -36,12 +40,14 @@ private:
     template<typename IntType> IntType toInteger(const std::string& name) const;
     template<typename T> T to(const std::string& name) const;
 
+    template<typename T> std::vector<T> series(const std::string& name) const;
+
     bool purposeShowHelp, purposeTestConfig, purposeReloadConfig;
 
     bool noFile;
     boost::filesystem::path file;
-    boost::program_options::variables_map options;
-    boost::program_options::options_description desc;
+    po::variables_map options;
+    po::options_description desc;
 
 public:
     static const Config* instance()
@@ -92,7 +98,8 @@ public:
         keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyErrCode, keyErrDesc;
 
-    std::string queryVisibleKeys;
+    StringList queryVisibleFields, queryInvisibleFields;
+    bool queryVisibleAll;
 };
 
 }

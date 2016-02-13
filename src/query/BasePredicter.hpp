@@ -52,7 +52,7 @@ protected:
         for (SharedItemList::const_iterator item = items.begin(); item != items.end(); ++item) {
             const Dom& dom = (*item)->dom;
             writer.StartObject();
-            for (ValueSet::const_iterator key = query.fields.begin(); key != query.fields.end(); ++key) {
+            for (ValuePtrSet::const_iterator key = query.fields.begin(); key != query.fields.end(); ++key) {
                 Dom::ConstMemberIterator it = dom.FindMember(**key);
                 if (it != dom.MemberEnd()) {
                     it->name.Accept(writer);

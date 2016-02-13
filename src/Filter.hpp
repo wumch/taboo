@@ -130,7 +130,7 @@ class InFilter:
     public BaseFilter
 {
 protected:
-    ValueSet values;
+    ValuePtrSet values;
     bool allowMiss;
 
 public:

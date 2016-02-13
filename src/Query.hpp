@@ -13,28 +13,16 @@
 namespace taboo
 {
 
-class ValueHasher
+class ValuePtrHasher
 {
 public:
     int operator()(const Value* value) const
     {
-        if (value->IsInt()) {
-            return boost::hash<int64_t>()(value->GetInt64());
-        } else if (value->IsString()) {
-            return stage::SDBMHash()(value->GetString(), value->GetStringLength());
-        } else if (value->IsNull()) {
-            return boost::hash<uint8_t>()(0);
-        } else if (value->IsBool()) {
-            return boost::hash<bool>()(value->GetBool());;
-        } else if (value->IsDouble()) {
-            return boost::hash<double>()(value->GetDouble());;
-        }
-        LOG_EVERY_N(WARNING, 100) << "hash unroll mismatched";
-        return boost::hash<uint8_t>()(0);
+        return value ? ValueHasher()(*value) : boost::hash<uint8_t>()(0);
     }
 };
 
-class ValueEqualer
+class ValuePtrEqualer
 {
 public:
     bool operator()(const Value* lhs, const Value* rhs) const
@@ -43,7 +31,7 @@ public:
     }
 };
 
-typedef boost::unordered_set<const Value*, ValueHasher, ValueEqualer> ValueSet;
+typedef boost::unordered_set<const Value*, ValuePtrHasher, ValuePtrEqualer> ValuePtrSet;
 
 
 class Query
@@ -52,10 +40,11 @@ private:
     Dom body;
 
 public:
-    ValueSet fields;
+    ValuePtrSet fields;
     std::string prefix;
     Value* filters, * excludes;
     std::size_t num;
+    bool fieldsAll;
 
 public:
     Query():
@@ -144,6 +133,7 @@ public:
                     query.fields.insert(&it->value);
                 }
             }
+            reviseFields(query);
         }
 
         query.num = Config::instance()->defaultMatches;
@@ -160,6 +150,29 @@ public:
         }
 
         return true;
+    }
+
+    static void reviseFields(Query& query)
+    {
+        const Aside* const aside = Aside::instance();
+        if (aside->queryVisibleAll) {
+            query.fieldsAll = query.fields.empty();
+            return;
+        }
+        query.fieldsAll = false;
+        if (aside->queryInvisibleFields.empty()) {
+            for (ValuePtrSet::const_iterator it = query.fields.begin(); it != query.fields.end(); ++it) {
+                if (aside->queryVisibleFields.find(**it) == aside->queryVisibleFields.end()) {
+                    it = query.fields.erase(it);
+                }
+            }
+        } else {
+            for (ValuePtrSet::iterator it = query.fields.begin(); it != query.fields.end(); ++it) {
+                if (aside->queryInvisibleFields.find(**it) != aside->queryInvisibleFields.end()) {
+                    it = query.fields.erase(it);
+                }
+            }
+        }
     }
 
     static bool prefixValid(const Value& _prefix)
