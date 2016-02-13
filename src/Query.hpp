@@ -52,12 +52,12 @@ public:
     {}
 
 public:
-    static bool rebuild(Query& query, const char* str)
+    static bool rebuild(Query& query, const std::string& str)
     {
         if (!query.body.IsNull()) {
             query.body.SetNull();
         }
-        query.body.Parse(str);
+        query.body.Parse(str.c_str());
         if (query.body.HasParseError() || !query.body.IsObject()) {
             query.body.SetNull();
             LOG_EVERY_N(ERROR, 10) << "failed on build query: "
@@ -70,10 +70,12 @@ public:
         {
             Dom::ConstMemberIterator it = query.body.FindMember(Aside::instance()->keyPrefix);
             if (it == query.body.MemberEnd() || !prefixValid(it->value)) {
+                CS_SAY("no key-prefix");
                 return false;
             }
             query.prefix = it->value.GetString();
             if (query.prefix.empty()) {
+                CS_SAY("empy prefix");
                 return false;
             }
         }
@@ -93,6 +95,7 @@ public:
                 } else if (it->value.IsUint()) {
                     query.filters = &it->value;
                 } else if (!it->value.IsNull()) {
+                    CS_SAY("bad filters");
                     return false;
                 }
             }
@@ -113,6 +116,7 @@ public:
                 } else if (it->value.IsUint()) {
                     query.excludes = &it->value;
                 } else if (!it->value.IsNull()) {
+                    CS_SAY("bad excludes");
                     return false;
                 }
             }
@@ -125,6 +129,7 @@ public:
                 if (it->value.IsArray()) {
                     for (Value::ConstMemberIterator i = it->value.MemberBegin(); i != it->value.MemberEnd(); ++i) {
                         if (!i->value.IsString()) {
+                            CS_SAY("bad fields");
                             return false;
                         }
                         query.fields.insert(&i->value);
@@ -134,6 +139,10 @@ public:
                 }
             }
             reviseFields(query);
+            if (!query.fieldsAll && query.fields.empty()) {
+                CS_SAY("no fields");
+                return false;
+            }
         }
 
         query.num = Config::instance()->defaultMatches;
@@ -161,13 +170,22 @@ public:
         }
         query.fieldsAll = false;
         if (aside->queryInvisibleFields.empty()) {
-            for (ValuePtrSet::const_iterator it = query.fields.begin(); it != query.fields.end(); ++it) {
-                if (aside->queryVisibleFields.find(**it) == aside->queryVisibleFields.end()) {
-                    it = query.fields.erase(it);
+            if (query.fields.empty()) {
+                for (ValueSet::const_iterator it = aside->queryVisibleFields.begin();
+                    it != aside->queryVisibleFields.end(); ++it) {
+                    query.fields.insert(&*it);
+                }
+            } else {
+                for (ValuePtrSet::const_iterator it = query.fields.begin();
+                    it != query.fields.end(); ++it) {
+                    if (aside->queryVisibleFields.find(**it) == aside->queryVisibleFields.end()) {
+                        it = query.fields.erase(it);
+                    }
                 }
             }
         } else {
-            for (ValuePtrSet::iterator it = query.fields.begin(); it != query.fields.end(); ++it) {
+            for (ValuePtrSet::iterator it = query.fields.begin();
+                it != query.fields.end(); ++it) {
                 if (aside->queryInvisibleFields.find(**it) != aside->queryInvisibleFields.end()) {
                     it = query.fields.erase(it);
                 }

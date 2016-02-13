@@ -225,20 +225,21 @@ public:
 };
 
 class NoRouteHandler:
-    public BaseHandler, public HandlerCreator<NoRouteHandler>
+    public BaseHandler,
+    public HandlerCreator<NoRouteHandler>
 {
 private:
-    const SharedReply reply;
+    static const SharedReply reply;
 
 public:
-    NoRouteHandler():
-        reply(genReply(err_no_route, "{\"" + config->keyErrCode + "\":"
-            + boost::lexical_cast<std::string, ec_t>(err_no_route) + "\"}", mem_mode_persist))
-    {}
-
     virtual SharedReply process()
     {
         return reply;
+    }
+
+    static void initReplys()
+    {
+        const_cast<SharedReply&>(reply) = genReply(err_no_route, "no matching route", mem_mode_persist);
     }
 
 protected:

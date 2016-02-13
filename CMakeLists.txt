@@ -20,7 +20,7 @@ if (cmake_build_type_lower MATCHES "debug")
         add_compile_options(-Wno-unused-local-typedefs -Wno-enum-compare)
     endif()
     
-    add_compile_options(-O0 -g3 -DCS_DEBUG=${CS_DEBUG} -ferror-limit=5)
+    add_compile_options(-O0 -g3 -DCS_DEBUG=${CS_DEBUG} -ferror-limit=5 -std=c++11)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O0 -Wl,-as-needed")
     
 else()

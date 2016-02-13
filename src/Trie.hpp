@@ -18,8 +18,10 @@ class Trie
 {
 private:
     enum {
-        no_value = static_cast<id_t>(-1),
-        no_path  = static_cast<id_t>(-2),
+//        no_value = static_cast<id_t>(-1),
+//        no_path  = static_cast<id_t>(-2),
+        no_value = 0x7fffffff - 1,
+        no_path  = 0x7fffffff - 2,
     };
     typedef cedar::da<id_t,no_value, no_path, false> DA;
 

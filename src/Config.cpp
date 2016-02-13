@@ -254,6 +254,8 @@ void Config::initDesc()
         ("key-id", po::value<std::string>()->default_value("id"),
             "key name for 'id' of items, default is 'id'.")
 
+        ("key-query", po::value<std::string>()->default_value("query"),
+            "key name for 'query' of query requests, default is 'query'.")
         ("key-prefix", po::value<std::string>()->default_value("prefix"),
             "key name for 'prefix' of query requests, default is 'prefix'.")
         ("key-filters", po::value<std::string>()->default_value("filters"),
@@ -370,6 +372,7 @@ void Config::loadOptions()
     keyUpsert = to<std::string>("key-upsert-item");
     keyId = to<std::string>("key-id");
 
+    keyQuery= to<std::string>("key-query");
     keyPrefix = to<std::string>("key-prefix");
     keyFilters = to<std::string>("key-filters");
     keyExcludes = to<std::string>("key-excludes");
@@ -450,6 +453,7 @@ void Config::loadOptions()
         _TABOO_OUT_CONFIG_OPTION(keyUpsert)
         _TABOO_OUT_CONFIG_OPTION(keyId)
 
+        _TABOO_OUT_CONFIG_OPTION(keyQuery)
         _TABOO_OUT_CONFIG_OPTION(keyPrefix)
         _TABOO_OUT_CONFIG_OPTION(keyFilters)
         _TABOO_OUT_CONFIG_OPTION(keyExcludes)
@@ -466,10 +470,14 @@ void Config::loadOptions()
 
 template<typename T> T Config::to(const std::string& name) const
 {
+    po::variables_map::const_iterator it = options.find(name);
+    if (it == options.end()) {
+        throw ErrorMissOption(name);
+    }
     try {
-        return options[name].as<T>();
+        return it->second.as<T>();
     } catch (const std::exception& e) {
-        throw ErrorInvalidValue(name, (noFile ? "" : (", config file: '" + file.string() + "'")));
+        throw ErrorInvalidValue(name, it->second.as<std::string>());
     }
 }
 
@@ -486,8 +494,7 @@ template<typename T> std::vector<T> Config::series(const std::string& name) cons
         }
         return res;
     } catch (const std::exception& e) {
-        throw ErrorInvalidValue(name, origin, "bad config value for '" + name + "' "
-            + (noFile ? "" : (", config file: '" + file.string() + "'")));
+        throw ErrorInvalidValue(name, origin);
     }
 }
 

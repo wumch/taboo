@@ -87,6 +87,11 @@ private:
     static bool initialize()
     {
         _instance = new Aside;
+        const Config* config = Config::instance();
+        for (StringList::const_iterator it = config->queryVisibleFields.begin(); it != config->queryVisibleFields.end(); ++it) {
+            Value field(it->data(), it->length());
+            _instance->queryVisibleFields.insert(field.Move());
+        }
         return _instance->_initialize();
     }
 

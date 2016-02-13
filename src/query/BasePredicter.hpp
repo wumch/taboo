@@ -2,6 +2,8 @@
 #pragma once
 
 #include "../predef.hpp"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 #include "../Query.hpp"
 #include "../Seeker.hpp"
 
@@ -19,7 +21,7 @@ class QueryECAlloctor:
 class BasePredicter:
     private QueryECAlloctor<0>
 {
-    friend class Router;
+    friend class taboo::Router;
     using QueryECAlloctor<0>::ECA;
 protected:
     enum {
@@ -29,30 +31,32 @@ protected:
         err_bad_param               = ECA::ECC<4>::value,
     };
 
-    Query query;
+    const std::string emptyResult;
+
+    const Seeker seeker;
 
 public:
     BasePredicter() {}
 
-    std::string predict() const;
-
-    virtual ~BasePredicter();
-
-protected:
-    std::string formReply(const SharedItemList& items) const
+    std::string predict(const Query& query) const
     {
-        return query.fields.empty() ? formReplyWhole(items) : formReplyFields(items);
+        const SharedItemList& items = seeker.seek(query);
+        return query.fieldsAll ? formReply(items) : formReply(items, query.fields);
     }
 
-    const char* formReplyFields(const SharedItemList& items) const
+    virtual ~BasePredicter() {};
+
+protected:
+    const char* formReply(const SharedItemList& items, const ValuePtrSet& fields) const
     {
+        // todo: provide pre-allocted buffer to rapidjson::StringBuffer.
         rapidjson::StringBuffer buffer(0, Config::instance()->querySendBuffer);
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
         writer.StartArray();
         for (SharedItemList::const_iterator item = items.begin(); item != items.end(); ++item) {
             const Dom& dom = (*item)->dom;
             writer.StartObject();
-            for (ValuePtrSet::const_iterator key = query.fields.begin(); key != query.fields.end(); ++key) {
+            for (ValuePtrSet::const_iterator key = fields.begin(); key != fields.end(); ++key) {
                 Dom::ConstMemberIterator it = dom.FindMember(**key);
                 if (it != dom.MemberEnd()) {
                     it->name.Accept(writer);
@@ -65,7 +69,7 @@ protected:
         return buffer.GetString();
     }
 
-    const char* formReplyWhole(const SharedItemList& items) const
+    const char* formReply(const SharedItemList& items) const
     {
         rapidjson::StringBuffer buffer(0, Config::instance()->querySendBuffer);
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);

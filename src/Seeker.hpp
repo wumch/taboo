@@ -21,8 +21,6 @@ private:
 
     const Farm& farm;
 
-    mutable Query query;
-
     mutable FilterChain filter;
 
     mutable SharedItemList items;
@@ -33,18 +31,16 @@ public:
         farm(Aside::instance()->farm)
     {}
 
-    const SharedItemList& seek(const char* _query) const
+    const SharedItemList& seek(const Query& query) const
     {
         items.clear();
-        if (Query::rebuild(query, _query) &&
-            FilterChain::rebuild(filter, query)) {
-            seek();
-        }
+        FilterChain::rebuild(filter, query);
+        _seek(query);
         return items;
     }
 
 private:
-    void seek() const
+    void _seek(const Query& query) const
     {
         ItemCallback cb(this, query.num);
         ReadLock lock(Aside::instance()->accessMutex);

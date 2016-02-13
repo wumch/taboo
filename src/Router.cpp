@@ -3,6 +3,7 @@
 #include "manager/StatusHandler.hpp"
 #include "manager/AttachHandler.hpp"
 #include "manager/DetachHandler.hpp"
+#include "query/PredictHandler.hpp"
 
 namespace taboo {
 
@@ -20,6 +21,8 @@ void Router::initHandlerMap()
     // todo: How to clean an item once all it's prefixes are lost ?
     creators.insert(std::make_pair(std::string("/manage/erase"), &manager::DetachHandler::create));
 
+    creators.insert(std::make_pair(std::string("/query/predict"), &query::PredictHandler::create));
+
     // force=0
 //    creators.insert(std::make_pair(std::string("/manage/tidy"), &manager::DetachHandler::create));
 
@@ -33,16 +36,23 @@ const std::string BaseHandler::methodPost("POST");
 
 const SharedReply BaseHandler::errUnknownReply;
 
+const SharedReply NoRouteHandler::reply;
+
 const BaseHandler::SharedReplyMap BaseHandler::replys;
 
 const SharedReply manager::AttachHandler::okReply;
 
+const SharedReply query::PredictHandler::errNoQueryReply;
+const SharedReply query::PredictHandler::errBadQueryReply;
+
 void Router::initHandlerRelyMap()
 {
+    NoRouteHandler::initReplys();
     manager::BaseHandler::initReplys();
     manager::StatusHandler::initReplys();
     manager::AttachHandler::initReplys();
     manager::DetachHandler::initReplys();
+    query::PredictHandler::initReplys();
 }
 
 }

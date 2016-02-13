@@ -95,7 +95,7 @@ public:
     std::string manageKey, manageSecret, signHyphen, signDelimiter;
 
     std::string keyManageKey, keySign, keyPrefixes, keyItem, keyUpsert, keyId,
-        keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
+        keyQuery, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyErrCode, keyErrDesc;
 
     StringList queryVisibleFields, queryInvisibleFields;
