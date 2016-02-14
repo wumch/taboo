@@ -4,6 +4,7 @@
 #include "../predef.hpp"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "../BaseHandler.hpp"
 #include "../Query.hpp"
 #include "../Seeker.hpp"
 
@@ -19,6 +20,7 @@ class QueryECAlloctor:
 {};
 
 class BasePredicter:
+    public taboo::BaseHandler,
     private QueryECAlloctor<0>
 {
     friend class taboo::Router;
@@ -29,30 +31,61 @@ protected:
         err_bad_request             = ECA::ECC<2>::value,
         err_too_many_params         = ECA::ECC<3>::value,
         err_bad_param               = ECA::ECC<4>::value,
+        err_no_query                = ECA::ECC<5>::value,
+        err_bad_query               = ECA::ECC<6>::value,
     };
+
+    static const SharedReply errNoQueryReply;
+    static const SharedReply errBadQueryReply;
 
     const std::string emptyResult;
 
     const Seeker seeker;
 
+    mutable Query query;
+
 public:
     BasePredicter() {}
 
-    std::string predict(const Query& query) const
+    std::string predict() const
     {
         const SharedItemList& items = seeker.seek(query);
-        return query.fieldsAll ? formReply(items) : formReply(items, query.fields);
+        return formReply(items, err_ok);
     }
 
     virtual ~BasePredicter() {};
 
 protected:
-    const char* formReply(const SharedItemList& items, const ValuePtrSet& fields) const
+    typedef rapidjson::Writer<rapidjson::StringBuffer> JsonWriter;
+
+    std::string formReply(const SharedItemList& items, ec_t errCode) const
     {
+        const Aside* const aside = Aside::instance();
         // todo: provide pre-allocted buffer to rapidjson::StringBuffer.
-        rapidjson::StringBuffer buffer(0, Config::instance()->querySendBuffer);
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        rapidjson::StringBuffer buffer(0, config->querySendBuffer);
+        JsonWriter writer(buffer);
+        writer.StartObject();
+
+        aside->keyErrCode.Accept(writer);
+        writer.Uint(errCode);
+
+        aside->keyPayload.Accept(writer);
         writer.StartArray();
+        query.fieldsAll ? addItems(writer, items) : addItems(writer, items, query.fields);
+        writer.EndArray();
+
+        if (query.echoData) {
+            aside->keyEchoData.Accept(writer);
+            query.echoData->Accept(writer);
+        }
+
+        writer.EndObject();
+
+        return buffer.GetString();
+    }
+
+    void addItems(JsonWriter& writer, const SharedItemList& items, const ValuePtrSet& fields) const
+    {
         for (SharedItemList::const_iterator item = items.begin(); item != items.end(); ++item) {
             const Dom& dom = (*item)->dom;
             writer.StartObject();
@@ -65,22 +98,22 @@ protected:
             }
             writer.EndObject();
         }
-        writer.EndArray();
-        return buffer.GetString();
     }
 
-    const char* formReply(const SharedItemList& items) const
+    void addItems(JsonWriter& writer, const SharedItemList& items) const
     {
-        rapidjson::StringBuffer buffer(0, Config::instance()->querySendBuffer);
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        writer.StartArray();
         for (SharedItemList::const_iterator item = items.begin(); item != items.end(); ++item) {
             (*item)->dom.Accept(writer);
         }
-        writer.EndArray();
-        return buffer.GetString();
     }
 
+    static void initReplys()
+    {
+        const_cast<SharedReply&>(errNoQueryReply) =
+            genReply(err_no_query, "no '" + Config::instance()->keyQuery + "' specified");
+        const_cast<SharedReply&>(errBadQueryReply) =
+            genReply(err_bad_query, "bad '" + Config::instance()->keyQuery + "' specified");
+    }
 };
 
 }

@@ -20,59 +20,60 @@ private:
 public:
     ValuePtrSet fields;
     std::string prefix;
+    Value* echoData;
     Value* filters, * excludes;
     std::size_t num;
     bool fieldsAll;
 
 public:
     Query():
-        filters(NULL), excludes(NULL), num(0)
+        echoData(NULL), filters(NULL), excludes(NULL), num(0)
     {}
 
 public:
-    static bool rebuild(Query& query, const std::string& str)
+    bool rebuild(const std::string& str)
     {
-        if (!query.body.IsNull()) {
-            query.body.SetNull();
+        if (!body.IsNull()) {
+            body.SetNull();
         }
-        query.body.Parse(str.c_str());
-        if (query.body.HasParseError() || !query.body.IsObject()) {
-            query.body.SetNull();
+        body.Parse(str.c_str());
+        if (body.HasParseError() || !body.IsObject()) {
+            body.SetNull();
             LOG_EVERY_N(ERROR, 10) << "failed on build query: "
-                << rapidjson::GetParseError_En(query.body.GetParseError())
+                << rapidjson::GetParseError_En(body.GetParseError())
                 << ", JSON: " << str;
             CS_DUMP("bad json for query");
             return false;
         }
 
-        query.prefix.clear();
+        prefix.clear();
         {
-            Dom::ConstMemberIterator it = query.body.FindMember(Aside::instance()->keyPrefix);
-            if (it == query.body.MemberEnd() || !prefixValid(it->value)) {
+            Dom::ConstMemberIterator it = body.FindMember(Aside::instance()->keyPrefix);
+            if (it == body.MemberEnd() || !prefixValid(it->value)) {
                 CS_SAY("no key-prefix");
                 return false;
             }
-            query.prefix = it->value.GetString();
-            if (query.prefix.empty()) {
+            prefix = it->value.GetString();
+            if (prefix.empty()) {
                 CS_SAY("empy prefix");
                 return false;
             }
         }
 
-        query.filters = NULL;
+        filters = NULL;
         {
-            Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyFilters);
-            if (it != query.body.MemberEnd()) {
+            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyFilters);
+            if (it != body.MemberEnd()) {
                 if (it->value.IsObject()) {
                     if (!it->value.ObjectEmpty()) {
-                        query.filters = &it->value;
+                        filters = &it->value;
                     }
                 } else if (it->value.IsArray()) {
                     if (!it->value.Empty()) {
-                        query.filters = &it->value;
+                        filters = &it->value;
                     }
                 } else if (it->value.IsUint()) {
-                    query.filters = &it->value;
+                    filters = &it->value;
                 } else if (!it->value.IsNull()) {
                     CS_SAY("bad filters");
                     return false;
@@ -80,20 +81,20 @@ public:
             }
         }
 
-        query.excludes = NULL;
+        excludes = NULL;
         {
-            Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyExcludes);
-            if (it != query.body.MemberEnd()) {
+            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyExcludes);
+            if (it != body.MemberEnd()) {
                 if (it->value.IsObject()) {
                     if (!it->value.ObjectEmpty()) {
-                        query.excludes = &it->value;
+                        excludes = &it->value;
                     }
                 } else if (it->value.IsArray()) {
                     if (!it->value.Empty()) {
-                        query.excludes = &it->value;
+                        excludes = &it->value;
                     }
                 } else if (it->value.IsUint()) {
-                    query.excludes = &it->value;
+                    excludes = &it->value;
                 } else if (!it->value.IsNull()) {
                     CS_SAY("bad excludes");
                     return false;
@@ -101,72 +102,82 @@ public:
             }
         }
 
-        query.fields.clear();
+        fields.clear();
         {
-            Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyFields);
-            if (it != query.body.MemberEnd()) {
+            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyFields);
+            if (it != body.MemberEnd()) {
                 if (it->value.IsArray()) {
                     for (Value::ConstValueIterator i = it->value.Begin(); i != it->value.End(); ++i) {
                         if (!i->IsString()) {
                             CS_SAY("bad fields");
                             return false;
                         }
-                        query.fields.insert(&*i);
+                        fields.insert(&*i);
                     }
                 } else if (it->value.IsString()) {
-                    query.fields.insert(&it->value);
+                    fields.insert(&it->value);
                 }
             }
-            reviseFields(query);
-            if (!query.fieldsAll && query.fields.empty()) {
+            reviseFields();
+            if (!fieldsAll && fields.empty()) {
                 CS_SAY("no fields");
                 return false;
             }
         }
 
-        query.num = Config::instance()->defaultMatches;
+        num = Config::instance()->defaultMatches;
         {
-            Dom::MemberIterator it = query.body.FindMember(Aside::instance()->keyNum);
-            if (it != query.body.MemberEnd()) {
+            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyNum);
+            if (it != body.MemberEnd()) {
                 if (it->value.IsUint()) {
-                    query.num = std::min<std::size_t>(it->value.GetUint(), Config::instance()->maxMatches);
+                    num = std::min<std::size_t>(it->value.GetUint(), Config::instance()->maxMatches);
                 }
             }
-            if (query.num < 1) {
-                query.num = Config::instance()->defaultMatches;
+            if (num < 1) {
+                num = Config::instance()->defaultMatches;
+            }
+        }
+
+        echoData = NULL;
+        {
+            if (!Config::instance()->keyEchoData.empty()) {
+                Dom::MemberIterator it = body.FindMember(Aside::instance()->keyEchoData);
+                if (it != body.MemberEnd()) {
+                    echoData = &it->value;
+                }
             }
         }
 
         return true;
     }
 
-    static void reviseFields(Query& query)
+    void reviseFields()
     {
         const Aside* const aside = Aside::instance();
         if (aside->queryVisibleAll) {
-            query.fieldsAll = query.fields.empty();
+            fieldsAll = fields.empty();
             return;
         }
-        query.fieldsAll = false;
+        fieldsAll = false;
         if (aside->queryInvisibleFields.empty()) {
-            if (query.fields.empty()) {
+            if (fields.empty()) {
                 for (ValuePtrSet::const_iterator it = aside->queryVisibleFields.begin();
                     it != aside->queryVisibleFields.end(); ++it) {
-                    query.fields.insert(*it);
+                    fields.insert(*it);
                 }
             } else {
-                for (ValuePtrSet::const_iterator it = query.fields.begin();
-                    it != query.fields.end(); ++it) {
+                for (ValuePtrSet::const_iterator it = fields.begin();
+                    it != fields.end(); ++it) {
                     if (aside->queryVisibleFields.find(*it) == aside->queryVisibleFields.end()) {
-                        it = query.fields.erase(it);
+                        it = fields.erase(it);
                     }
                 }
             }
         } else {
-            for (ValuePtrSet::iterator it = query.fields.begin();
-                it != query.fields.end(); ++it) {
+            for (ValuePtrSet::iterator it = fields.begin();
+                it != fields.end(); ++it) {
                 if (aside->queryInvisibleFields.find(*it) != aside->queryInvisibleFields.end()) {
-                    it = query.fields.erase(it);
+                    it = fields.erase(it);
                 }
             }
         }

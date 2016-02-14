@@ -45,7 +45,7 @@ private:
     bool purposeShowHelp, purposeTestConfig, purposeReloadConfig;
 
     bool noFile;
-    boost::filesystem::path file;
+    boost::filesystem::path defaultConfigDir, configFile;
     po::variables_map options;
     po::options_description desc;
 
@@ -62,7 +62,8 @@ public:
     bool storeOnExit, restoreOnStart;
     boost::filesystem::path trieFile, itemsFile;
 
-    bool queryEnableHttp, queryEnableWs;
+    bool queryEnableHttp, queryEnableHttps, queryEnableWs, queryEnableWss;
+    boost::filesystem::path wssCert, httpsCert;
 
     std::string manageHost, queryHost;
     uint16_t managePort, queryPort;
@@ -89,15 +90,16 @@ public:
     std::size_t itemsAllocStep, maxItems;
 
     uint32_t prefixMinLen, prefixMaxLen;
+    std::size_t queryDataMaxSize;
 
     uint32_t maxIterations, maxMatches, defaultMatches;
 
-    bool checkSign;
+    bool checkSign, manageMustPost;
     std::string manageKey, manageSecret, signHyphen, signDelimiter;
 
     std::string keyManageKey, keySign, keyPrefixes, keyItem, keyUpsert, keyId,
-        keyQuery, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
-        keyErrCode, keyErrDesc;
+        keyQuery, keyQueryToken, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
+        keyEchoData, keyErrCode, keyErrDesc, keyPayload;
 
     StringList queryVisibleFields, queryInvisibleFields;
     bool queryVisibleAll;

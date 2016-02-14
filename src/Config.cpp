@@ -28,7 +28,7 @@ class ErrorMissOption:
 {
 public:
     ErrorMissOption(const std::string& optionName, const std::string& reason = std::string()):
-        po::error_with_option_name("config option '%signs: example%' is required"
+        po::error_with_option_name("config option '%name%' is required"
             + (reason.empty() ? reason : (": " + reason)), optionName)
     {
         set_substitute("name", optionName);
@@ -85,7 +85,8 @@ void Config::init(int argc, char* argv[])
     programName = programPath.filename();
 #endif
 
-    boost::filesystem::path defaultConfig("etc/" + programName + ".conf");
+    defaultConfigDir = "etc";
+    boost::filesystem::path defaultConfig = defaultConfigDir / (programName + ".conf");
     desc.add_options()
         ("help,h", "show this help and exit.")
         ("test-config,t", "test config options and exit.")
@@ -119,25 +120,25 @@ void Config::init(int argc, char* argv[])
 
     if (purposeShowHelp) {
         std::cout
-            << "usage: " << argv[0] << " [options]" << CS_LINESEP
             << programName << " is an HTTP/WebSocket based prefix predict server with "
                 "user-customizeable property " << CS_LINESEP
                 << "matching feature. See " << TABOO_WIKI_LINK << " for more information."
             << CS_LINESEP << CS_LINESEP
+            << "usage: " << argv[0] << " [options]" << CS_LINESEP
             << desc << CS_LINESEP;
     } else {
         noFile = to<bool>("no-config-file");
         if (noFile) {
             loadOptions();
         } else {
-            file = to<boost::filesystem::path>("config");
+            configFile = to<boost::filesystem::path>("config");
             loadFile();
         }
     }
 
     if (purposeTestConfig) {
-        CS_ECHO(CS_OC_GREEN("config " << (file.empty() ? "" :
-            (std::string("file '") + file.string() + "'")) << " is ok."));
+        CS_ECHO(CS_OC_GREEN("config " << (configFile.empty() ? "" :
+            (std::string("file '") + configFile.string() + "'")) << " is ok."));
     }
 }
 
@@ -145,8 +146,10 @@ void Config::initDesc()
 {
     boost::filesystem::path defaultPidFile("/var/run/" + programName + ".pid");
     boost::filesystem::path defaultStorePath("/var/lib/" + programName + "/");
-    boost::filesystem::path defaultTrieFile = defaultStorePath.string() + "trie.dat";
-    boost::filesystem::path defaultItemsFile = defaultStorePath.string() + "items.dat";
+    boost::filesystem::path defaultTrieFile = defaultStorePath / "trie.dat",
+        defaultItemsFile = defaultStorePath / "items.dat";
+    boost::filesystem::path defaultWssCert = defaultConfigDir / "wss.cert",
+        defaultHttpsCert = defaultConfigDir / "https.cert";
     std::string lanIp = stage::getLanIP();
     desc.add_options()
         ("pid-file", po::value<boost::filesystem::path>()->default_value(defaultPidFile),
@@ -161,6 +164,20 @@ void Config::initDesc()
             ("file to store trie, default is '" + defaultStorePath.string() + "trie.dat'.").c_str())
         ("items-file", po::value<boost::filesystem::path>()->default_value(defaultItemsFile),
             ("file to store items, default is '" + defaultStorePath.string() + "items.dat'.").c_str())
+
+        ("query-enable-http", po::bool_switch()->default_value(true),
+            "enable HTTP protocol for query, default is 'yes'.")
+        ("query-enable-https", po::bool_switch()->default_value(false),
+            "enable HTTPS protocol for query, default is 'false'.")
+        ("query-enable-websocket", po::bool_switch()->default_value(true),
+            "enable WebSocket protocol for query, default is 'yes'.")
+        ("query-enable-websocket-secure", po::bool_switch()->default_value(false),
+            "enable WebSocket Secure protocol for query, default is 'yes'.")
+        ("https-cert", po::value<boost::filesystem::path>()->default_value(defaultHttpsCert),
+            ("cert file for HTTPS protocol, default is '" + defaultHttpsCert.string() + "'.").c_str())
+        ("websocket-secure-cert", po::value<boost::filesystem::path>()->default_value(defaultWssCert),
+            ("cert file for WebSocket Secure protocol, default is '"
+            + defaultWssCert.string() + "'.").c_str())
 
         ("manage-host", po::value<std::string>()->default_value(lanIp),
             ("host to bind for manage, default is " + lanIp).c_str())
@@ -239,6 +256,8 @@ void Config::initDesc()
 
         ("check-signature", po::bool_switch()->default_value(true),
             "check signature or not for manage requests, default is yes.")
+        ("manage-must-post", po::bool_switch()->default_value(false),
+            "force request method of manage requests to be POST, default is 'no'.")
         ("manage-key", po::value<std::string>(),
             "access key for manage, REQUIRED when @check-signature='yes'.")
         ("manage-secret", po::value<std::string>(),
@@ -261,8 +280,10 @@ void Config::initDesc()
         ("key-id", po::value<std::string>()->default_value("id"),
             "key name for 'id' of items, default is 'id'.")
 
-        ("key-query", po::value<std::string>()->default_value("query"),
-            "key name for 'query' of query requests, default is 'query'.")
+        ("key-query-data", po::value<std::string>()->default_value("data"),
+            "key name for query data of query requests, default is 'data'.")
+        ("key-query-access-token", po::value<std::string>()->default_value("accessToken"),
+            "key name for access-token of query requests, default is 'accessToken'.")
         ("key-prefix", po::value<std::string>()->default_value("prefix"),
             "key name for 'prefix' of query requests, default is 'prefix'.")
         ("key-filters", po::value<std::string>()->default_value("filters"),
@@ -273,11 +294,20 @@ void Config::initDesc()
             "key name for 'fields' of query requests, default is 'fields'.")
         ("key-num", po::value<std::string>()->default_value("num"),
             "key name for 'num' of query requests, default is 'num'.")
+        ("key-echo-data", po::value<std::string>()->default_value("echoData"),
+            "key name for 'echo-data' of both query requests and responses, default is 'echoData'. "
+            "it's value will be echoed to client originally, unless the query is invalid."
+            "explicit set this to empty string will disable 'echo-data' feature.")
 
         ("key-error-code", po::value<std::string>()->default_value("code"),
-             "key name for 'error-code' of manage response, default is 'code'.")
+             "key name for 'error-code' of query responses, default is 'code'.")
         ("key-error-description", po::value<std::string>()->default_value("desc"),
-            "key name for 'error-description' of manage response, default is 'desc'.")
+            "key name for 'error-description' of query responses, default is 'desc'.")
+        ("key-payload", po::value<std::string>()->default_value("data"),
+            "key name for 'payload' of query responses, default is 'data'.")
+
+        ("query-data-max-size", po::value<std::string>()->default_value("4K"),
+            "max bytes of the whole 'query-data' for query requests, default is 4K.")
 
         ("query-visible-fields", po::value<std::string>()->default_value("*"),
             "visible fields for query requests, comma separated field names, "
@@ -292,12 +322,12 @@ void Config::initDesc()
 void Config::loadFile()
 {
     try {
-        po::store(po::parse_config_file<char>(file.c_str(), desc), options);
+        po::store(po::parse_config_file<char>(configFile.c_str(), desc), options);
     } catch (const std::exception& e) {
         boost::system::error_code err;
-        boost::filesystem::path path = boost::filesystem::canonical(file, err);
+        boost::filesystem::path path = boost::filesystem::canonical(configFile, err);
         throw po::error("faild on load config-file: "
-            + (err ? file : path).string() + CS_LINESEP_STR + e.what());
+            + (err ? configFile : path).string() + CS_LINESEP_STR + e.what());
     }
     po::notify(options);
 
@@ -313,6 +343,17 @@ void Config::loadOptions()
 
     trieFile = to<boost::filesystem::path>("trie-file");
     itemsFile = to<boost::filesystem::path>("items-file");
+
+    queryEnableHttp = to<bool>("query-enable-http");
+    queryEnableHttps = to<bool>("query-enable-https");
+    queryEnableWs = to<bool>("query-enable-websocket");
+    queryEnableWss = to<bool>("query-enable-websocket-secure");
+    if (queryEnableWss) {
+        wssCert = to<boost::filesystem::path>("websocket-secure-cert");
+    }
+    if (queryEnableHttps) {
+        httpsCert = to<boost::filesystem::path>("https-cert");
+    }
 
     manageHost = to<std::string>("manage-host");
     managePort = to<uint16_t>("manage-port");
@@ -349,8 +390,9 @@ void Config::loadOptions()
     itemsAllocStep = toInteger<std::size_t>("items-allocate-step");
     maxItems = toInteger<std::size_t>("max-items");
 
-    prefixMinLen = to<uint32_t>("prefix-min-length");
-    prefixMaxLen = to<uint32_t>("prefix-max-length");
+    prefixMinLen = toInteger<uint32_t>("prefix-min-length");
+    prefixMaxLen = toInteger<uint32_t>("prefix-max-length");
+    queryDataMaxSize = toInteger<std::size_t>("query-data-max-size");
 
     maxIterations = toInteger<uint32_t>("max-iterations");
     maxMatches = toInteger<uint32_t>("max-matches");
@@ -373,6 +415,7 @@ void Config::loadOptions()
             throw ErrorInvalidValue("manage-secret", "", "must not be empty");
         }
     }
+    manageMustPost = to<bool>("manage-must-post");
     signHyphen = to<std::string>("sign-hyphen");
     signDelimiter = to<std::string>("sign-delimiter");
 
@@ -383,15 +426,18 @@ void Config::loadOptions()
     keyUpsert = to<std::string>("key-upsert-item");
     keyId = to<std::string>("key-id");
 
-    keyQuery= to<std::string>("key-query");
+    keyQuery = to<std::string>("key-query-data");
+    keyQueryToken = to<std::string>("key-token");
     keyPrefix = to<std::string>("key-prefix");
     keyFilters = to<std::string>("key-filters");
     keyExcludes = to<std::string>("key-excludes");
     keyFields = to<std::string>("key-fields");
     keyNum = to<std::string>("key-num");
+    keyEchoData = to<std::string>("key-echo-data");
 
     keyErrCode = to<std::string>("key-error-code");
     keyErrDesc = to<std::string>("key-error-description");
+    keyPayload = to<std::string>("key-payload");
 
     queryVisibleFields = series<std::string>("query-visible-fields");
     bool visibleAll = queryVisibleFields.size() == 1 && queryVisibleFields[0] == "*";
@@ -402,19 +448,25 @@ void Config::loadOptions()
 
 #if CS_DEBUG
     boost::system::error_code err;
-    boost::filesystem::path path = boost::filesystem::canonical(file, err);
+    boost::filesystem::path path = boost::filesystem::canonical(configFile, err);
 #endif
     CS_SAY(
-        "loaded configs in [" << (err ? file : path) << "]:" << CS_LINESEP
+        "loaded configs in [" << (err ? configFile : path) << "]:" << CS_LINESEP
 
         _TABOO_OUT_CONFIG_OPTION(programName)
-        _TABOO_OUT_CONFIG_OPTION(file)
+        _TABOO_OUT_CONFIG_OPTION(configFile)
         _TABOO_OUT_CONFIG_OPTION(pidFile)
 
         _TABOO_OUT_CONFIG_OPTION(storeOnExit)
         _TABOO_OUT_CONFIG_OPTION(restoreOnStart)
         _TABOO_OUT_CONFIG_OPTION(trieFile)
         _TABOO_OUT_CONFIG_OPTION(itemsFile)
+
+        _TABOO_OUT_CONFIG_OPTION(queryEnableHttp)
+        _TABOO_OUT_CONFIG_OPTION(queryEnableWs)
+        _TABOO_OUT_CONFIG_OPTION(queryEnableWss)
+        _TABOO_OUT_CONFIG_OPTION(wssCert)
+        _TABOO_OUT_CONFIG_OPTION(httpsCert)
 
         _TABOO_OUT_CONFIG_OPTION(manageHost)
         _TABOO_OUT_CONFIG_OPTION(managePort)
@@ -469,13 +521,16 @@ void Config::loadOptions()
         _TABOO_OUT_CONFIG_OPTION(keyId)
 
         _TABOO_OUT_CONFIG_OPTION(keyQuery)
+        _TABOO_OUT_CONFIG_OPTION(keyQueryToken)
         _TABOO_OUT_CONFIG_OPTION(keyPrefix)
         _TABOO_OUT_CONFIG_OPTION(keyFilters)
         _TABOO_OUT_CONFIG_OPTION(keyExcludes)
         _TABOO_OUT_CONFIG_OPTION(keyFields)
         _TABOO_OUT_CONFIG_OPTION(keyNum)
+        _TABOO_OUT_CONFIG_OPTION(keyEchoData)
         _TABOO_OUT_CONFIG_OPTION(keyErrCode)
         _TABOO_OUT_CONFIG_OPTION(keyErrDesc)
+        _TABOO_OUT_CONFIG_OPTION(keyPayload)
 
         _TABOO_OUT_CONFIG_OPTION(queryVisibleFields)
         _TABOO_OUT_CONFIG_OPTION(queryInvisibleFields)

@@ -24,7 +24,8 @@ if (cmake_build_type_lower MATCHES "debug")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O0 -Wl,-as-needed")
     
 else()
-    add_compile_options(-O3 -DNDEBUG -Wno-unused-local-typedefs -Wno-enum-compare)
+    add_compile_options(-O3 -DNDEBUG -finline-functions
+        -Wno-unused-local-typedefs -Wno-enum-compare)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-O3 -Wl,-as-needed")
 endif()
 
@@ -33,7 +34,7 @@ include_directories(libs libs/websocketpp libs/rapidjson/include)
 link_libraries(boost_system boost_chrono boost_program_options boost_filesystem boost_thread 
     crypto microhttpd glog)
 
-# todo: should link staticaly
+# todo: should link staticlly
 find_library(lib_malloc jemalloc)
 if (lib_malloc)
     link_libraries(jemalloc)

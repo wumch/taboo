@@ -57,9 +57,12 @@ protected:
     };
 };
 
+class Router;
+
 class BaseHandler:
     private ECAlloctor<0, 0>
 {
+    friend class Router;
 private:
     static const std::string escapedQuotation;
 
@@ -135,15 +138,6 @@ public:
 
     virtual SharedReply process() = 0;
 
-    static void initReplys()
-    {
-        const_cast<SharedReply&>(errUnknownReply) =
-            genReply(err_unknown, "unknown error", mem_mode_persist);
-        const_cast<SharedReplyMap&>(replys).insert(
-            std::make_pair<ec_t, SharedReply>(err_unknown, errUnknownReply));
-        fillReply(err_process_failed, "failed on processing");
-    }
-
     virtual ~BaseHandler() {}
 
 protected:
@@ -158,6 +152,15 @@ protected:
     virtual bool reviewParam(const std::string& key, const std::string& value)
     {
         return true;
+    }
+
+    static void initReplys()
+    {
+        const_cast<SharedReply&>(errUnknownReply) =
+            genReply(err_unknown, "unknown error", mem_mode_persist);
+        const_cast<SharedReplyMap&>(replys).insert(
+            std::make_pair<ec_t, SharedReply>(err_unknown, errUnknownReply));
+        fillReply(err_process_failed, "failed on processing");
     }
 
     static SharedReply genReply(ec_t errCode, const std::string& errDesc,

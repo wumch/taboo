@@ -11,6 +11,7 @@
 #include "Farm.hpp"
 #include "predef.hpp"
 #include "Item.hpp"
+#include "Session.hpp"
 #include "Trie.hpp"
 
 extern int main(int, char*[]);
@@ -58,8 +59,8 @@ private:
 
 public:
     const Value keyManageKey, keyPrefixes, keyItem, keyId,
-        keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
-        keyErrCode, keyErrDesc;
+        keyQueryToken, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
+        keyEchoData, keyErrCode, keyErrDesc, keyPayload;
 
     ValuePtrSet queryVisibleFields, queryInvisibleFields;
     bool queryVisibleAll;
@@ -87,12 +88,15 @@ private:
         keyItem(config->keyItem.data(), config->keyItem.length()),
         keyId(config->keyId.data(), config->keyId.length()),
         keyPrefix(config->keyPrefix.data(), config->keyPrefix.length()),
+        keyQueryToken(config->keyQueryToken.data(), config->keyQueryToken.length()),
         keyFilters(config->keyFilters.data(), config->keyFilters.length()),
         keyExcludes(config->keyExcludes.data(), config->keyExcludes.length()),
         keyFields(config->keyFields.data(), config->keyFields.length()),
         keyNum(config->keyNum.data(), config->keyNum.length()),
+        keyEchoData(config->keyEchoData.data(), config->keyEchoData.length()),
         keyErrCode(config->keyErrCode.data(), config->keyErrCode.length()),
         keyErrDesc(config->keyErrDesc.data(), config->keyErrDesc.length()),
+        keyPayload(config->keyPayload.data(), config->keyPayload.length()),
         queryVisibleAll(config->queryVisibleAll), farm(slots)
     {
         if (!queryVisibleAll) {

@@ -73,7 +73,6 @@ private:
             if (!slot.empty()) {
                 for (Slot::const_iterator it = slot.begin(); it != slot.end(); ++it) {
                     if (seeker->items.size() < maxMatch) {
-                        CS_DUMP(seeker->items.size());
                         if (recorded.find(it->second->id) == recorded.end()) {
                             if (seeker->filter.apply(it->second)) {
                                 recorded.insert(it->second->id);

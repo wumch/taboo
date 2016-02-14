@@ -45,8 +45,8 @@ const BaseHandler::SharedReplyMap BaseHandler::replys;
 
 const SharedReply manager::AttachHandler::okReply;
 
-const SharedReply query::PredictHandler::errNoQueryReply;
-const SharedReply query::PredictHandler::errBadQueryReply;
+const SharedReply query::BasePredicter::errNoQueryReply;
+const SharedReply query::BasePredicter::errBadQueryReply;
 
 void Router::initHandlerRelyMap()
 {
@@ -55,7 +55,7 @@ void Router::initHandlerRelyMap()
     manager::StatusHandler::initReplys();
     manager::AttachHandler::initReplys();
     manager::DetachHandler::initReplys();
-    query::PredictHandler::initReplys();
+    query::BasePredicter::initReplys();
 }
 
 }
