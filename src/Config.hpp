@@ -38,7 +38,6 @@ private:
 
     void loadOptions();
 
-    template<typename IntType> IntType toInteger(const std::string& name) const;
     template<typename T> T to(const std::string& name) const;
 
     template<typename T> std::vector<T> series(const std::string& name) const;

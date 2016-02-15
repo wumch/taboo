@@ -23,15 +23,17 @@ extern "C" {
 
 namespace taboo {
 
+namespace {
+
 class ErrorMissOption:
     public po::error_with_option_name
 {
 public:
     ErrorMissOption(const std::string& optionName, const std::string& reason = std::string()):
-        po::error_with_option_name("config option '%name%' is required"
+        po::error_with_option_name("config option '%option%' is required"
             + (reason.empty() ? reason : (": " + reason)), optionName)
     {
-        set_substitute("name", optionName);
+        set_substitute("option", optionName);
     }
 };
 
@@ -42,21 +44,34 @@ public:
     ErrorInvalidValue(const std::string& optionName, const std::string& optionValue = "",
         const std::string& reason = std::string()):
         po::error_with_option_name("invalid config value "
-            + (optionValue.empty() ? "" : ("'" + optionValue + "' ")) + "for option '%name%'"
+            + (optionValue.empty() ? "" : ("'" + optionValue + "' ")) + "for option '%option%'"
             + (reason.empty() ? reason : (": " + reason)), optionName)
     {
-        set_substitute("name", optionName);
+        set_substitute("option", optionName);
     }
 };
+
+class ErrorBadValue:
+    public po::error_with_option_name
+{
+public:
+    ErrorBadValue(const std::string& optionValue, const std::string& reason = std::string()):
+        po::error_with_option_name("invalid config value "
+            + (optionValue.empty() ? "" : ("'" + optionValue + "' ")) + "for option '%option%'"
+            + (reason.empty() ? reason : (": " + reason)))
+    {}
+};
+
+}
 
 template<typename IntType> IntType toInteger(const std::string& value)
 {
     std::string name("config-option-name-aaa");
     if (value.empty()) {
-        throw ErrorInvalidValue(name, "", "must not be empty");
+        throw ErrorBadValue("", "must not be empty");
     }
     if (*value.begin() == '-' && 0 < static_cast<IntType>(-1)) {
-        throw ErrorInvalidValue(name, value, "must be positive integer");
+        throw ErrorBadValue(value, "must be positive integer");
     }
     int unit = *value.rbegin();
     int bits = 0;
@@ -77,20 +92,20 @@ template<typename IntType> IntType toInteger(const std::string& value)
     try {
         num = boost::lexical_cast<IntType>(value.substr(0, value.length() - 1));
     } catch (const boost::bad_lexical_cast& e) {
-        throw ErrorInvalidValue(name, value, "must be integer");
+        throw ErrorBadValue(value, "quantity part must be integer");
     }
 
     if (bits == -1) {
-        throw ErrorInvalidValue(name, value, std::string("bad unit '") + (char)unit + "'");
+        throw ErrorBadValue(value, std::string("bad unit '") + (char)unit + "'");
     }
     if (bits) {
         int bitsRemain = sizeof(IntType) * CHAR_BIT - bits;
         if (bitsRemain < 0) {
-            throw ErrorInvalidValue(name, value, std::string("unit '") + (char)unit + "' out of bound");
+            throw ErrorBadValue(value, std::string("unit '") + (char)unit + "' out of bound");
         }
         IntType max = 1 << bitsRemain;
         if (!(num < max)) {
-            throw ErrorInvalidValue(name, value, "out of bound");
+            throw ErrorBadValue(value, "out of bound");
         }
         return num << bits;
     } else {
@@ -329,9 +344,11 @@ void Config::initDesc()
             "min length for prefix of query, at least 1, default is 2.")
         ("prefix-max-length", po::value(makePtr(prefixMaxLen))->default_value(60),
             "max length for prefix of query, default is 60. NOTE: this is not applied for manage requests.")
+        ("query-data-max-bytes", po::value(makePtr(queryDataMaxSize))->default_value(std::string("4K")),
+            "max bytes of @key-query-request-payload for query requests, default is 4K.")
 
-        ("max-iterations", po::value(makePtr(maxIterations))->default_value(std::string("3000")),
-            "max iterations for each matching, default is 3000.")
+        ("max-iterations", po::value(makePtr(maxIterations))->default_value(std::string("10K")),
+            "max iterations for each matching, default is 10K.")
         ("max-matches", po::value(makePtr(maxMatches))->default_value(std::string("100")),
             "max count of items to match for query, default is 100.")
         ("default-matches", po::value(makePtr(defaultMatches))->default_value(std::string("10")),
@@ -350,7 +367,7 @@ void Config::initDesc()
         ("sign-delimiter", po::value(&signDelimiter)->default_value("&"),
             "glue for join key-value pairs when generate signature, default is '&'.")
 
-        ("key-manage-request-manager-key", po::value(&keyMUKey)->default_value("key"),
+        ("key-manage-request-manage-key", po::value(&keyMUKey)->default_value("key"),
             "key name for 'manage-key' of manage requests, default is 'key'.")
         ("key-manage-request-sign", po::value(&keyMUSign)->default_value("sign"),
             "key name for 'sign' of manage requests, default is 'sign'.")
@@ -358,12 +375,12 @@ void Config::initDesc()
             "key name for 'prefixes' of items in manage requests, default is 'prefixes'.")
         ("key-manage-request-item", po::value(&keyMUItem)->default_value("item"),
             "key name for 'item' of manage requests, default is 'item'.")
-        ("key-id", po::value(&keyId)->default_value("id"),
+        ("key-item-id", po::value(&keyId)->default_value("id"),
             "key name for 'id' of items, default is 'id'.")
         ("key-manage-request-upsert-item", po::value(&keyMUUpsert)->default_value("upsert"),
             "key name for 'upsert-item' of manage requests, default is 'upsert'.")
-        ("key-manage-request-identy", po::value(&keyMUIdenty)->default_value("userid"),
-            "key name for 'user-id' of get token requests, default is 'userid'.")
+        ("key-manage-request-token-identy", po::value(&keyMUIdenty)->default_value("tid"),
+            "key name for 'identy of token' of get token requests, default is 'tid'.")
         ("key-manage-request-filters", po::value(&keyMUFilters)->default_value("filters"),
             "key name for 'filters' of get token requests, default is 'filters'.")
         ("key-manage-request-expire", po::value(&keyMUExpire)->default_value("expire"),
@@ -376,10 +393,10 @@ void Config::initDesc()
         ("key-manage-response-payload", po::value(&keyMUExpire)->default_value("data"),
             "key name for 'payload' of manage responses, default is 'data'.")
 
-        ("key-query-request-payload", po::value(&keyQUPayload)->default_value("data"),
-            "key name for query data of query requests, default is 'data'.")
         ("key-query-request-access-token", po::value(&keyQUToken)->default_value("accessToken"),
             "key name for access-token of query requests, default is 'accessToken'.")
+        ("key-query-request-payload", po::value(&keyQUPayload)->default_value("data"),
+            "key name for query data of query requests, default is 'data'.")
         ("key-query-request-prefix", po::value(&keyQUPrefix)->default_value("prefix"),
             "key name for 'prefix' of query requests, default is 'prefix'.")
         ("key-query-request-filters", po::value(&keyQUFilters)->default_value("filters"),
@@ -390,7 +407,7 @@ void Config::initDesc()
             "key name for 'fields' of query requests, default is 'fields'.")
         ("key-query-request-num", po::value(&keyQUNum)->default_value("num"),
             "key name for 'num' of query requests, default is 'num'.")
-        ("key-query-echo-data", po::value(&keyQEchoData)->default_value("echoData"),
+        ("key-query-request-echo-data", po::value(&keyQEchoData)->default_value("echoData"),
             "key name for 'echo-data' of both query requests and responses, default is 'echoData'. "
             "explicit specify this as empty string will disable 'echo-data' feature.")
 
@@ -400,9 +417,6 @@ void Config::initDesc()
             "key name for 'error-description' of query responses, default is 'desc'.")
         ("key-query-response-payload", po::value(&keyQDPayload)->default_value("data"),
             "key name for 'payload' of query responses, default is 'data'.")
-
-        ("query-data-max-size", po::value(makePtr(queryDataMaxSize))->default_value(std::string("4K")),
-            "max bytes of the whole 'query-data' for query requests, default is 4K.")
 
         ("query-visible-fields", po::value<std::string>()->default_value("*"),
             "visible fields for query requests, comma separated field names, "
@@ -431,69 +445,6 @@ void Config::loadFile()
 
 void Config::loadOptions()
 {
-    pidFile = to<boost::filesystem::path>("pid-file");
-
-    storeOnExit = to<bool>("store-on-exit");
-    restoreOnStart = to<bool>("restore-on-start");
-
-    trieFile = to<boost::filesystem::path>("trie-file");
-    itemsFile = to<boost::filesystem::path>("items-file");
-
-    queryEnableHttp = to<bool>("query-enable-http");
-    queryEnableHttps = to<bool>("query-enable-https");
-    queryEnableWs = to<bool>("query-enable-websocket");
-    queryEnableWss = to<bool>("query-enable-websocket-secure");
-    if (queryEnableWss) {
-        wssCert = to<boost::filesystem::path>("websocket-secure-cert");
-    }
-    if (queryEnableHttps) {
-        httpsCert = to<boost::filesystem::path>("https-cert");
-    }
-
-    manageHost = to<std::string>("manage-host");
-    managePort = to<uint16_t>("manage-port");
-    queryHost = to<std::string>("query-host");
-    queryPort = to<uint16_t>("query-port");
-
-    manageWorkers = toInteger<uint32_t>("manage-workers");
-    queryWorkers = toInteger<uint32_t>("query-workers");
-
-    stackSize = toInteger<std::size_t>("stack-size");
-    maxOpenFiles = toInteger<std::size_t>("max-open-files");
-    memlock = to<bool>("memlock");
-    reuseAddress = to<bool>("reuse-address");
-    tcpNodelay = to<bool>("tcp-nodelay");
-    backlog = toInteger<uint32_t>("listen-backlog");
-
-    maxManageConnections = toInteger<std::size_t>("max-manage-connections");
-    maxQueryConnections = toInteger<std::size_t>("max-query-connections");
-
-    manageConnectionMemoryLimit = toInteger<std::size_t>("manage-connection-memory-limit");
-    manageRecvBuffer = toInteger<std::size_t>("manage-connection-recv-buffer");
-    manageSendBuffer = toInteger<std::size_t>("manage-connection-send-buffer");
-    queryRecvBuffer = toInteger<std::size_t>("query-connection-recv-buffer");
-    querySendBuffer = toInteger<std::size_t>("query-connection-send-buffer");
-
-    manageRecvTimeout = to<std::time_t>("manage-receive-timeout");
-    manageSendTimeout = to<std::time_t>("manage-send-timeout");
-    queryRecvTimeout = to<std::time_t>("query-receive-timeout");
-    querySendTimeout = to<std::time_t>("query-send-timeout");
-
-    connectionMaxIdle = to<std::time_t>("connection-max-idle");
-    connectionCheckInterval = to<std::time_t>("connection-check-interval");
-
-    itemsAllocStep = toInteger<std::size_t>("items-allocate-step");
-    maxItems = toInteger<std::size_t>("max-items");
-
-    prefixMinLen = toInteger<uint32_t>("prefix-min-length");
-    prefixMaxLen = toInteger<uint32_t>("prefix-max-length");
-    queryDataMaxSize = toInteger<std::size_t>("query-data-max-size");
-
-    maxIterations = toInteger<uint32_t>("max-iterations");
-    maxMatches = toInteger<uint32_t>("max-matches");
-    defaultMatches = toInteger<uint32_t>("default-matches");
-
-    checkSign = to<bool>("check-signature");
     if (checkSign) {
         if (options.find("manage-key") == options.end()) {
             throw ErrorMissOption("manage-key");
@@ -510,36 +461,6 @@ void Config::loadOptions()
             throw ErrorInvalidValue("manage-secret", "", "must not be empty");
         }
     }
-    manageMustPost = to<bool>("manage-must-post");
-    signHyphen = to<std::string>("sign-hyphen");
-    signDelimiter = to<std::string>("sign-delimiter");
-
-    keyMUKey = to<std::string>("key-manage-request-key");
-    keyMUSign = to<std::string>("key-manage-request-sign");
-    keyMUPrefixes = to<std::string>("key-manage-request-prefixes");
-    keyMUItem = to<std::string>("key-manage-request-item");
-    keyMUUpsert = to<std::string>("key-manage-request-upsert-item");
-    keyMUIdenty = to<std::string>("key-manage-request-identy");
-    keyMUFilters = to<std::string>("key-manage-request-filters");
-    keyMUExpire = to<std::string>("key-manage-request-expire");
-
-    keyMDErrCode = to<std::string>("key-manage-response-error-code");
-    keyMDErrDesc = to<std::string>("key-manage-response-error-description");
-
-    keyId = to<std::string>("key-id");
-
-    keyQUPayload = to<std::string>("key-query-request-data");
-    keyQUToken = to<std::string>("key-query-request-token");
-    keyQUPrefix = to<std::string>("key-query-request-prefix");
-    keyQUFilters = to<std::string>("key-query-request-filters");
-    keyQUExcludes = to<std::string>("key-query-request-excludes");
-    keyQUFields = to<std::string>("key-query-request-fields");
-    keyQUNum = to<std::string>("key-query-request-num");
-    keyQEchoData = to<std::string>("key-query-echo-data");
-
-    keyQDPayload = to<std::string>("key-query-response-payload");
-    keyQDErrCode = to<std::string>("key-query-response-error-code");
-    keyQDErrDesc = to<std::string>("key-query-response-error-description");
 
     queryVisibleFields = series<std::string>("query-visible-fields");
     bool visibleAll = queryVisibleFields.size() == 1 && queryVisibleFields[0] == "*";
@@ -679,55 +600,6 @@ template<typename T> std::vector<T> Config::series(const std::string& name) cons
         return res;
     } catch (const std::exception& e) {
         throw ErrorInvalidValue(name, origin);
-    }
-}
-
-template<typename IntType> IntType Config::toInteger(const std::string& name) const
-{
-    const std::string value = to<std::string>(name);
-    if (value.empty()) {
-        throw ErrorInvalidValue(name, "", "must not be empty");
-    }
-    if (*value.begin() == '-' && 0 < static_cast<IntType>(-1)) {
-        throw ErrorInvalidValue(name, value, "must be positive integer");
-    }
-    int unit = *value.rbegin();
-    int bits = 0;
-    if (std::isalpha(unit)) {
-        char u = std::tolower(unit);
-        switch (u) {
-        case 'k': bits = 10; break;
-        case 'm': bits = 20; break;
-        case 'g': bits = 30; break;
-        case 't': bits = 40; break;
-        default: bits = -1; break;
-        }
-    } else {
-        return boost::lexical_cast<IntType>(value);
-    }
-
-    IntType num;
-    try {
-        num = boost::lexical_cast<IntType>(value.substr(0, value.length() - 1));
-    } catch (const boost::bad_lexical_cast& e) {
-        throw ErrorInvalidValue(name, value, "must be integer");
-    }
-
-    if (bits == -1) {
-        throw ErrorInvalidValue(name, value, std::string("bad unit '") + (char)unit + "'");
-    }
-    if (bits) {
-        int bitsRemain = sizeof(IntType) * CHAR_BIT - bits;
-        if (bitsRemain < 0) {
-            throw ErrorInvalidValue(name, value, std::string("unit '") + (char)unit + "' out of bound");
-        }
-        IntType max = 1 << bitsRemain;
-        if (!(num < max)) {
-            throw ErrorInvalidValue(name, value, "out of bound");
-        }
-        return num << bits;
-    } else {
-        return num;
     }
 }
 
