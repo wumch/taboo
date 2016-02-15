@@ -1,6 +1,7 @@
 
 #include "Router.hpp"
 #include "manager/StatusHandler.hpp"
+#include "manager/TokenHandler.hpp"
 #include "manager/AttachHandler.hpp"
 #include "manager/DetachHandler.hpp"
 #include "query/PredictHandler.hpp"
@@ -21,7 +22,7 @@ void Router::initHandlerMap()
     // todo: How to clean an item once all it's prefixes are lost ?
     creators.insert(std::make_pair(std::string("/manage/erase"), &manager::DetachHandler::create));
 
-    creators.insert(std::make_pair(std::string("/manage/get_access_token"), &manager::DetachHandler::create));
+    creators.insert(std::make_pair(std::string("/manage/get_access_token"), &manager::TokenHandler::create));
 
     creators.insert(std::make_pair(std::string("/query/predict"), &query::PredictHandler::create));
 

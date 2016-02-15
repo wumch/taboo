@@ -9,6 +9,7 @@
 #include "stage/hash.hpp"
 #include "stage/math.hpp"
 #include "Aside.hpp"
+#include "Session.hpp"
 
 namespace taboo {
 
@@ -140,7 +141,7 @@ public:
 
         echoData = NULL;
         {
-            if (!Config::instance()->keyEchoData.empty()) {
+            if (!Config::instance()->keyQEchoData.empty()) {
                 Dom::MemberIterator it = body.FindMember(Aside::instance()->keyEchoData);
                 if (it != body.MemberEnd()) {
                     echoData = &it->value;

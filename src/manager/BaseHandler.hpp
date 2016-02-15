@@ -69,7 +69,7 @@ public:
 protected:
     virtual bool reviewParam(const std::string& key, const std::string& value)
     {
-        if (key == config->keySign) {
+        if (key == config->keyMUSign) {
             sign = value;
             return false;
         }

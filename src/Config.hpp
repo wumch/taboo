@@ -2,6 +2,7 @@
 #pragma once
 
 #include "predef.hpp"
+#include <ctime>
 #include <string>
 #include <vector>
 #include <boost/thread/mutex.hpp>
@@ -97,9 +98,15 @@ public:
     bool checkSign, manageMustPost;
     std::string manageKey, manageSecret, signHyphen, signDelimiter;
 
-    std::string keyManageKey, keySign, keyPrefixes, keyItem, keyUpsert, keyId,
-        keyQuery, keyQueryToken, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
-        keyEchoData, keyErrCode, keyErrDesc, keyPayload;
+    std::time_t tokenDefaultExpire;
+
+    std::string keyMUKey, keyMUSign, keyMUPrefixes, keyMUItem, keyMUUpsert,
+        keyMUIdenty, keyMUFilters, keyMUExpire,
+        keyMDErrCode, keyMDErrDesc, keyMDPayload,
+        keyId,
+        keyQEchoData,
+        keyQUPayload, keyQUToken, keyQUPrefix, keyQUFilters, keyQUExcludes, keyQUFields, keyQUNum,
+        keyQDErrCode, keyQDErrDesc, keyQDPayload;
 
     StringList queryVisibleFields, queryInvisibleFields;
     bool queryVisibleAll;

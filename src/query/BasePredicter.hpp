@@ -110,9 +110,9 @@ protected:
     static void initReplys()
     {
         const_cast<SharedReply&>(errNoQueryReply) =
-            genReply(err_no_query, "no '" + Config::instance()->keyQuery + "' specified");
+            genReply(err_no_query, "no '" + Config::instance()->keyQUPayload + "' specified");
         const_cast<SharedReply&>(errBadQueryReply) =
-            genReply(err_bad_query, "bad '" + Config::instance()->keyQuery + "' specified");
+            genReply(err_bad_query, "bad '" + Config::instance()->keyQUPayload + "' specified");
     }
 };
 

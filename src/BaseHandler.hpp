@@ -168,15 +168,15 @@ protected:
     {
         SharedReply reply(new Reply(memMode));
         std::string& content = reply->content;
-        content.reserve((9 + 10) + Config::instance()->keyErrCode.length()
-            + Config::instance()->keyErrDesc.length() + errDesc.length());
+        content.reserve((9 + 10) + Config::instance()->keyMDErrCode.length()
+            + Config::instance()->keyMDErrDesc.length() + errDesc.length());
         content += "{\"";
-        content += Config::instance()->keyErrCode;
+        content += Config::instance()->keyMDErrCode;
         content += "\":";
         content += boost::lexical_cast<std::string>(errCode);
         if (!errDesc.empty()) {
             content += ",\"";
-            content += Config::instance()->keyErrDesc;
+            content += Config::instance()->keyMDErrDesc;
             content += "\":\"";
             if (errDesc.find('"') == errDesc.npos) {
                 content += errDesc;

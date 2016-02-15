@@ -11,7 +11,6 @@
 #include "Farm.hpp"
 #include "predef.hpp"
 #include "Item.hpp"
-#include "Session.hpp"
 #include "Trie.hpp"
 
 extern int main(int, char*[]);
@@ -58,7 +57,7 @@ private:
     const Config* config;
 
 public:
-    const Value keyManageKey, keyPrefixes, keyItem, keyId,
+    const Value keyManageKey, keyPrefixes, keyItem, keyId, keyToken,
         keyQueryToken, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
         keyEchoData, keyErrCode, keyErrDesc, keyPayload;
 
@@ -83,20 +82,20 @@ private:
 
     Aside():
         config(Config::instance()),
-        keyManageKey(config->keyManageKey.data(), config->keyManageKey.length()),
-        keyPrefixes(config->keyPrefixes.data(), config->keyPrefixes.length()),
-        keyItem(config->keyItem.data(), config->keyItem.length()),
+        keyManageKey(config->keyMUKey.data(), config->keyMUKey.length()),
+        keyPrefixes(config->keyMUPrefixes.data(), config->keyMUPrefixes.length()),
+        keyItem(config->keyMUItem.data(), config->keyMUItem.length()),
         keyId(config->keyId.data(), config->keyId.length()),
-        keyPrefix(config->keyPrefix.data(), config->keyPrefix.length()),
-        keyQueryToken(config->keyQueryToken.data(), config->keyQueryToken.length()),
-        keyFilters(config->keyFilters.data(), config->keyFilters.length()),
-        keyExcludes(config->keyExcludes.data(), config->keyExcludes.length()),
-        keyFields(config->keyFields.data(), config->keyFields.length()),
-        keyNum(config->keyNum.data(), config->keyNum.length()),
-        keyEchoData(config->keyEchoData.data(), config->keyEchoData.length()),
-        keyErrCode(config->keyErrCode.data(), config->keyErrCode.length()),
-        keyErrDesc(config->keyErrDesc.data(), config->keyErrDesc.length()),
-        keyPayload(config->keyPayload.data(), config->keyPayload.length()),
+        keyPrefix(config->keyQUPrefix.data(), config->keyQUPrefix.length()),
+        keyQueryToken(config->keyQUToken.data(), config->keyQUToken.length()),
+        keyFilters(config->keyQUFilters.data(), config->keyQUFilters.length()),
+        keyExcludes(config->keyQUExcludes.data(), config->keyQUExcludes.length()),
+        keyFields(config->keyQUFields.data(), config->keyQUFields.length()),
+        keyNum(config->keyQUNum.data(), config->keyQUNum.length()),
+        keyEchoData(config->keyQEchoData.data(), config->keyQEchoData.length()),
+        keyErrCode(config->keyMDErrCode.data(), config->keyMDErrCode.length()),
+        keyErrDesc(config->keyMDErrDesc.data(), config->keyMDErrDesc.length()),
+        keyPayload(config->keyQDPayload.data(), config->keyQDPayload.length()),
         queryVisibleAll(config->queryVisibleAll), farm(slots)
     {
         if (!queryVisibleAll) {

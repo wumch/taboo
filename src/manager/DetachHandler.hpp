@@ -7,7 +7,8 @@ namespace taboo {
 namespace manager {
 
 class DetachHandler:
-    public BaseHandler, public taboo::HandlerCreator<DetachHandler>
+    public BaseHandler,
+    public taboo::HandlerCreator<DetachHandler>
 {
 protected:
     enum {

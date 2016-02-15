@@ -18,7 +18,7 @@ public:
     virtual SharedReply process()
     {
         CS_SAY("predicting");
-        ParamMap::const_iterator it = params.find(config->keyQuery);
+        ParamMap::const_iterator it = params.find(config->keyQUPayload);
         if (it == params.end()) {
             CS_SAY("no query");
             return errNoQueryReply;

@@ -37,7 +37,7 @@ protected:
                 break;
             }
 
-            ParamMap::const_iterator itItem = params.find(config->keyItem);
+            ParamMap::const_iterator itItem = params.find(config->keyMUItem);
             if (itItem == params.end()) {
                 res->code = err_bad_param;
                 break;
@@ -48,7 +48,7 @@ protected:
                 break;
             }
 
-            ParamMap::const_iterator itUpsert = params.find(config->keyUpsert);
+            ParamMap::const_iterator itUpsert = params.find(config->keyMUUpsert);
             bool upsert = itUpsert == params.end() || itUpsert->second.empty() || itUpsert->second[0] != '0';
             if (!Keeper::instance()->attach(keys, item, upsert)) {
                 res->code = err_already_exists;
@@ -64,16 +64,16 @@ protected:
     virtual ec_t checkParams() const
     {
         return (!(config->checkSign && sign.empty())
-           && params.find(config->keyManageKey) != params.end()
-           && params.find(config->keyPrefixes) != params.end()
-           && params.find(config->keyItem) != params.end()) ?
+           && params.find(config->keyMUKey) != params.end()
+           && params.find(config->keyMUPrefixes) != params.end()
+           && params.find(config->keyMUItem) != params.end()) ?
                err_ok : err_bad_param;
     }
 
     KeyList getKeys() const
     {
         KeyList keys;
-        ParamMap::const_iterator it = params.find(config->keyPrefixes);
+        ParamMap::const_iterator it = params.find(config->keyMUPrefixes);
         if (it != params.end()) {
             Dom prefixes;
             prefixes.Parse(it->second.c_str());
