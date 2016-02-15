@@ -49,7 +49,7 @@ public:
 
         prefix.clear();
         {
-            Dom::ConstMemberIterator it = body.FindMember(Aside::instance()->keyPrefix);
+            Dom::ConstMemberIterator it = body.FindMember(Aside::instance()->keyQUPrefix);
             if (it == body.MemberEnd() || !prefixValid(it->value)) {
                 CS_SAY("no key-prefix");
                 return false;
@@ -63,7 +63,7 @@ public:
 
         filters = NULL;
         {
-            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyFilters);
+            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyQUFilters);
             if (it != body.MemberEnd()) {
                 if (it->value.IsObject()) {
                     if (!it->value.ObjectEmpty()) {
@@ -84,7 +84,7 @@ public:
 
         excludes = NULL;
         {
-            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyExcludes);
+            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyQUExcludes);
             if (it != body.MemberEnd()) {
                 if (it->value.IsObject()) {
                     if (!it->value.ObjectEmpty()) {
@@ -105,7 +105,7 @@ public:
 
         fields.clear();
         {
-            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyFields);
+            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyQUFields);
             if (it != body.MemberEnd()) {
                 if (it->value.IsArray()) {
                     for (Value::ConstValueIterator i = it->value.Begin(); i != it->value.End(); ++i) {
@@ -128,7 +128,7 @@ public:
 
         num = Config::instance()->defaultMatches;
         {
-            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyNum);
+            Dom::MemberIterator it = body.FindMember(Aside::instance()->keyQUNum);
             if (it != body.MemberEnd()) {
                 if (it->value.IsUint()) {
                     num = std::min<std::size_t>(it->value.GetUint(), Config::instance()->maxMatches);
@@ -142,7 +142,7 @@ public:
         echoData = NULL;
         {
             if (!Config::instance()->keyQEchoData.empty()) {
-                Dom::MemberIterator it = body.FindMember(Aside::instance()->keyEchoData);
+                Dom::MemberIterator it = body.FindMember(Aside::instance()->keyQEchoData);
                 if (it != body.MemberEnd()) {
                     echoData = &it->value;
                 }

@@ -21,14 +21,11 @@ protected:
     {
         SharedResult res(new Result);
         do {
-            if (filters.IsNull()) {
-                res->code = err_bad_param;
-                break;
-            }
             identy_t identy;
             {
                 ParamMap::const_iterator it = params.find(config->keyMUIdenty);
                 if (it == params.end()) {
+                    CS_SAY("no identy");
                     res->code = err_bad_param;
                     break;
                 }
@@ -41,6 +38,7 @@ protected:
                     ? std::time(NULL) + config->tokenDefaultExpire
                     : boost::lexical_cast<std::time_t>(it->second);
             }
+            CS_SAY("get token pass");
             std::string token = SessionManager::instance()->ensure(identy, filters, expire);
             res->reply = genReply(err_ok, token, mem_mode_must_copy);
         } while (false);
@@ -52,7 +50,8 @@ protected:
         if (key == config->keyMUFilters) {
             Dom dom;
             dom.Parse(value.c_str());
-            if (dom.HasParseError() || dom.IsObject()) {
+            CS_DUMP(dom.IsObject());
+            if (dom.HasParseError() || !dom.IsObject()) {
                 return false;
             }
             filters.Swap(dom);

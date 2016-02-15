@@ -101,7 +101,7 @@ public:
 
     std::string keyMUKey, keyMUSign, keyMUPrefixes, keyMUItem, keyMUUpsert,
         keyMUIdenty, keyMUFilters, keyMUExpire,
-        keyMDErrCode, keyMDErrDesc, keyMDPayload,
+        keyMDErrCode, keyMDErrDesc, keyMDPayload, keyMDToken, keyMDTokenExpire,
         keyId,
         keyQEchoData,
         keyQUPayload, keyQUToken, keyQUPrefix, keyQUFilters, keyQUExcludes, keyQUFields, keyQUNum,

@@ -11,7 +11,7 @@
 #include "../Config.hpp"
 #include "../Aside.hpp"
 #include "../Item.hpp"
-#include "Signer.hpp"
+#include "../Signer.hpp"
 
 namespace taboo  {
 
@@ -113,7 +113,7 @@ protected:
 
     virtual ec_t checkParams() const
     {
-        return sign.empty() ? err_bad_param : err_ok;
+        return config->checkSign && sign.empty() ? err_bad_param : err_ok;
     }
 
     virtual SharedReply getReply(ec_t errCode) const

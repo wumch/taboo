@@ -57,9 +57,11 @@ private:
     const Config* config;
 
 public:
-    const Value keyManageKey, keyPrefixes, keyItem, keyId, keyToken,
-        keyQueryToken, keyPrefix, keyFilters, keyExcludes, keyFields, keyNum,
-        keyEchoData, keyErrCode, keyErrDesc, keyPayload;
+    const std::string keyMUKey, keyMUSign, keyMUPrefixes, keyMUItem, keyMUUpsert;
+    const Value keyMDErrCode, keyMDErrDesc, keyMDPayload, keyMDToken, keyMDTokenExpire,
+        keyId, keyQEchoData,
+        keyQUPayload, keyQUToken, keyQUPrefix, keyQUFilters, keyQUExcludes, keyQUFields, keyQUNum,
+        keyQDErrCode, keyQDErrDesc, keyQDPayload;
 
     ValuePtrSet queryVisibleFields, queryInvisibleFields;
     bool queryVisibleAll;
@@ -82,21 +84,35 @@ private:
 
     Aside():
         config(Config::instance()),
-        keyManageKey(config->keyMUKey.data(), config->keyMUKey.length()),
-        keyPrefixes(config->keyMUPrefixes.data(), config->keyMUPrefixes.length()),
-        keyItem(config->keyMUItem.data(), config->keyMUItem.length()),
+        keyMUKey(config->keyMUKey),
+        keyMUSign(config->keyMUSign),
+        keyMUPrefixes(config->keyMUPrefixes),
+        keyMUItem(config->keyMUItem),
+        keyMUUpsert(config->keyMUUpsert),
+
+        keyMDErrCode(config->keyMDErrCode.data(), config->keyMDErrCode.length()),
+        keyMDErrDesc(config->keyMDErrDesc.data(), config->keyMDErrDesc.length()),
+        keyMDPayload(config->keyMDPayload.data(), config->keyMDPayload.length()),
+        keyMDToken(config->keyMDToken.data(), config->keyMDToken.length()),
+        keyMDTokenExpire(config->keyMDTokenExpire.data(), config->keyMDTokenExpire.length()),
+
         keyId(config->keyId.data(), config->keyId.length()),
-        keyPrefix(config->keyQUPrefix.data(), config->keyQUPrefix.length()),
-        keyQueryToken(config->keyQUToken.data(), config->keyQUToken.length()),
-        keyFilters(config->keyQUFilters.data(), config->keyQUFilters.length()),
-        keyExcludes(config->keyQUExcludes.data(), config->keyQUExcludes.length()),
-        keyFields(config->keyQUFields.data(), config->keyQUFields.length()),
-        keyNum(config->keyQUNum.data(), config->keyQUNum.length()),
-        keyEchoData(config->keyQEchoData.data(), config->keyQEchoData.length()),
-        keyErrCode(config->keyMDErrCode.data(), config->keyMDErrCode.length()),
-        keyErrDesc(config->keyMDErrDesc.data(), config->keyMDErrDesc.length()),
-        keyPayload(config->keyQDPayload.data(), config->keyQDPayload.length()),
-        queryVisibleAll(config->queryVisibleAll), farm(slots)
+        keyQEchoData(config->keyQEchoData.data(), config->keyQEchoData.length()),
+
+        keyQUPayload(config->keyQUPayload.data(), config->keyQUPayload.length()),
+        keyQUToken(config->keyQUToken.data(), config->keyQUToken.length()),
+        keyQUPrefix(config->keyQUPrefix.data(), config->keyQUPrefix.length()),
+        keyQUFilters(config->keyQUFilters.data(), config->keyQUFilters.length()),
+        keyQUExcludes(config->keyQUExcludes.data(), config->keyQUExcludes.length()),
+        keyQUFields(config->keyQUFields.data(), config->keyQUFields.length()),
+        keyQUNum(config->keyQUNum.data(), config->keyQUNum.length()),
+
+        keyQDErrCode(config->keyQDErrCode.data(), config->keyQDErrCode.length()),
+        keyQDErrDesc(config->keyQDErrDesc.data(), config->keyQDErrDesc.length()),
+        keyQDPayload(config->keyQDPayload.data(), config->keyQDPayload.length()),
+
+        queryVisibleAll(config->queryVisibleAll),
+        farm(slots)
     {
         if (!queryVisibleAll) {
             if (!config->queryVisibleFields.empty() &&

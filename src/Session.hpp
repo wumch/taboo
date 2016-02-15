@@ -9,6 +9,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include "stage/random.hpp"
 #include "Aside.hpp"
+#include "Signer.hpp"
 
 namespace taboo {
 
@@ -119,6 +120,24 @@ protected:
     }
 
     std::string _createToken() const
+    {
+        timeval time;
+        gettimeofday(&time, NULL);
+        uint64_t rand = rander();
+        MD5Stream stream;
+        if (!Config::instance()->manageKey.empty()) {
+            stream << Config::instance()->manageKey;
+        }
+        stream << StrRef(reinterpret_cast<char*>(&time.tv_sec), sizeof(time.tv_sec))
+            << StrRef(reinterpret_cast<char*>(&time.tv_usec), sizeof(time.tv_usec))
+            << StrRef(reinterpret_cast<char*>(&rand), sizeof(rand));
+        if (!Config::instance()->manageSecret.empty()) {
+            stream << Config::instance()->manageSecret;
+        }
+        return stream.hex();
+    }
+
+    std::string __createToken() const
     {
         std::string token;
         token.reserve(32);

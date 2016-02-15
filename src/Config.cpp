@@ -386,12 +386,16 @@ void Config::initDesc()
         ("key-manage-request-expire", po::value(&keyMUExpire)->default_value("expire"),
             "key name for 'token expire' of get token requests, default is 'expire'.")
 
-        ("key-manage-response-error-code", po::value(&keyMUExpire)->default_value("code"),
+        ("key-manage-response-error-code", po::value(&keyMDErrCode)->default_value("code"),
             "key name for 'error-code' of manage responses, default is 'code'.")
-        ("key-manage-response-error-description", po::value(&keyMUExpire)->default_value("desc"),
+        ("key-manage-response-error-description", po::value(&keyMDErrDesc)->default_value("desc"),
             "key name for 'error-description' of manage responses, default is 'desc'.")
-        ("key-manage-response-payload", po::value(&keyMUExpire)->default_value("data"),
+        ("key-manage-response-payload", po::value(&keyMDPayload)->default_value("data"),
             "key name for 'payload' of manage responses, default is 'data'.")
+        ("key-manage-response-token", po::value(&keyMDPayload)->default_value("token"),
+            "key name for 'token' of manage responses, default is 'token'.")
+        ("key-manage-response-expire", po::value(&keyMDPayload)->default_value("expire"),
+            "key name for 'token-expire' of manage responses, default is 'expire'.")
 
         ("key-query-request-access-token", po::value(&keyQUToken)->default_value("accessToken"),
             "key name for access-token of query requests, default is 'accessToken'.")

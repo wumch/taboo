@@ -66,16 +66,16 @@ protected:
         JsonWriter writer(buffer);
         writer.StartObject();
 
-        aside->keyErrCode.Accept(writer);
+        aside->keyQDErrCode.Accept(writer);
         writer.Uint(errCode);
 
-        aside->keyPayload.Accept(writer);
+        aside->keyQDPayload.Accept(writer);
         writer.StartArray();
         query.fieldsAll ? addItems(writer, items) : addItems(writer, items, query.fields);
         writer.EndArray();
 
         if (query.echoData) {
-            aside->keyEchoData.Accept(writer);
+            aside->keyQEchoData.Accept(writer);
             query.echoData->Accept(writer);
         }
 

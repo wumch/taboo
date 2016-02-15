@@ -7,6 +7,7 @@ curl -vvv http://localhost:9002     \
 
 #include "predef.hpp"
 #include <iostream>
+#include <boost/thread.hpp>
 #include <glog/logging.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
@@ -42,13 +43,33 @@ void test_trie(const char* query)
     }
 }
 
+void start_http()
+{
+    taboo::Manager::instance()->start();
 }
+
 
 typedef websocketpp::server<websocketpp::config::asio> server;
 
 void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
 {
     std::cout << msg->get_payload() << std::endl;
+}
+
+void start_ws()
+{
+    server print_server;
+
+    print_server.set_message_handler(&on_message);
+
+    print_server.init_asio();
+    boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::from_string("127.0.0.1"), 9002);
+    print_server.listen(ep);
+    print_server.start_accept();
+
+    print_server.run();
+}
+
 }
 
 int main(int argc, char* argv[])
@@ -62,23 +83,17 @@ int main(int argc, char* argv[])
         CS_DIE("failed on initialize");
     }
 
-    CS_SAY("testing trie");
     taboo::test_trie(argv[argc - 1]);
     CS_SAY("test trie done");
 
-    taboo::Manager::instance()->start();
-    getchar();
+    boost::thread http(&taboo::start_http);
+//    boost::thread ws(&taboo::start_ws);
+    http.join();
+    CS_SAY("http started");
+//    ws.start_thread();
+
+    CS_SAY("ws starting");
+    taboo::start_ws();
 
     return 0;
-
-    server print_server;
-
-    print_server.set_message_handler(&on_message);
-
-    print_server.init_asio();
-    boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::from_string("127.0.0.1"), 9002);
-    print_server.listen(ep);
-    print_server.start_accept();
-
-    print_server.run();
 }
