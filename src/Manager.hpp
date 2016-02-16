@@ -130,7 +130,9 @@ protected:
             MHD_OPTION_EXTERNAL_LOGGER,  &Manager::logError, NULL,
             MHD_OPTION_THREAD_POOL_SIZE, config->manageWorkers,
             MHD_OPTION_THREAD_STACK_SIZE, config->stackSize,
+#if MHD_VERSION > 0x00093301
             MHD_OPTION_LISTENING_ADDRESS_REUSE, config->reuseAddress,
+#endif
             MHD_OPTION_NOTIFY_COMPLETED, &Manager::onRequestCompleted, NULL,
             MHD_OPTION_END);
         if (daemon == NULL) {
