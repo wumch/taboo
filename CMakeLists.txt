@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(taboo)
 
-add_compile_options(-pthread -fomit-frame-pointer -pipe -fno-strict-aliasing -Wall)
+add_compile_options(-std=c++03 -pthread -fomit-frame-pointer -pipe -fno-strict-aliasing -Wall)
 string(TOLOWER "${CMAKE_BUILD_TYPE}" cmake_build_type_lower)
 if (cmake_build_type_lower MATCHES "debug")
     

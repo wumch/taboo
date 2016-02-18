@@ -9,11 +9,11 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
 
-extern int main(int, char*[]);
-
 namespace po = boost::program_options;
 
 namespace taboo {
+
+class Portal;
 
 typedef std::vector<std::string> StringList;
 
@@ -27,7 +27,7 @@ private:
     {}
 
     static boost::mutex configLoadMutex;
-    friend int ::main(int, char*[]);
+    friend class Portal;
     static bool initialize(int argc, char* argv[]);
 
     void init(int argc, char* argv[]);

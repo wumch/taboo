@@ -7,6 +7,7 @@
 #include <boost/lexical_cast.hpp>
 #include "Config.hpp"
 #include "BaseHandler.hpp"
+#include "query/WsPredicter.hpp"
 
 namespace taboo {
 
@@ -52,6 +53,8 @@ public:
         handler->setMeta(method, uri);
         return handler;
     }
+
+    SharedWsPredicter route(Server::message_ptr message) const;
 
 protected:
     void initHandlerMap();

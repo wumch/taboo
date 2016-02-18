@@ -158,7 +158,7 @@ protected:
                 closure->postProcessor = MHD_create_post_processor(connection,
                     closure->config->manageRecvBuffer,
                     &Manager::postParamIterator, *conClosure);
-                ok = !!closure->postProcessor;
+                ok = closure->postProcessor != NULL;
             }
             return ok ? MHD_YES : MHD_NO;;
 

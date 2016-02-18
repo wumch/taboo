@@ -17,6 +17,8 @@ extern int main(int, char*[]);
 
 namespace taboo {
 
+class Portal;
+
 typedef boost::shared_lock<boost::shared_mutex> ReadLock;
 typedef boost::unique_lock<boost::shared_mutex> WriteLock;
 
@@ -131,7 +133,7 @@ private:
         }
     }
 
-    friend int ::main(int, char*[]);
+    friend class Portal;
     static bool initialize()
     {
         _instance = new Aside;

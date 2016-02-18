@@ -4,7 +4,8 @@
 #include "manager/TokenHandler.hpp"
 #include "manager/AttachHandler.hpp"
 #include "manager/DetachHandler.hpp"
-#include "query/PredictHandler.hpp"
+#include "query/HttpPredicter.hpp"
+#include "query/WsPredicter.hpp"
 
 namespace taboo {
 
@@ -24,7 +25,7 @@ void Router::initHandlerMap()
 
     creators.insert(std::make_pair(std::string("/manage/get_access_token"), &manager::TokenHandler::create));
 
-    creators.insert(std::make_pair(std::string("/query/predict"), &query::PredictHandler::create));
+    creators.insert(std::make_pair(std::string("/query/predict"), &query::HttpPredicter::create));
 
     // force=0
 //    creators.insert(std::make_pair(std::string("/manage/tidy"), &manager::DetachHandler::create));
@@ -57,6 +58,13 @@ void Router::initHandlerRelyMap()
     manager::AttachHandler::initReplys();
     manager::DetachHandler::initReplys();
     query::BasePredicter::initReplys();
+}
+
+SharedWsPredicter Router::route(Server::message_ptr message) const
+{
+    SharedWsPredicter handler = query::WsPredicter::create();
+    handler->setMessage(message);
+    return handler;
 }
 
 }

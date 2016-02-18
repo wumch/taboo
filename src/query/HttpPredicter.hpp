@@ -7,9 +7,9 @@
 namespace taboo {
 namespace query {
 
-class PredictHandler:
+class HttpPredicter :
     public BasePredicter,
-    public taboo::HandlerCreator<PredictHandler>,
+    public taboo::HandlerCreator<HttpPredicter>,
     private QueryECAlloctor<1>
 {
     friend class taboo::Router;
