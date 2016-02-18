@@ -1,6 +1,6 @@
 
 /**
-curl -vvv http://localhost:9002     \
+curl -vvv http://localhost:1080     \
  -H "Connection:Upgrade" -H "Origin:null" -H "Sec-WebSocket-Extensions:x-webkit-deflate-frame"          \
  -H "Sec-WebSocket-Key:puVOuWb7rel6z2AVZBKnfw==" -H "Sec-WebSocket-Version:13" -H "Upgrade:websocket"
  */
