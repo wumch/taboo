@@ -26,16 +26,15 @@ public:
     virtual SharedReply process()
     {
         CS_SAY("predicting");
-        ParamMap::const_iterator it = params.find(config->keyQUPayload);
-        if (it == params.end()) {
+        if (message->get_payload().empty()) {
             CS_SAY("no query");
             return errNoQueryReply;
         }
-        if (it->second.length() > config->queryDataMaxSize) {
+        if (message->get_payload().length() > config->queryDataMaxSize) {
             CS_SAY("query data too long");
             return errBadQueryReply;
         }
-        if (!query.rebuild(it->second)) {
+        if (!query.rebuild(message->get_payload())) {
             CS_SAY("bad query");
             return errBadQueryReply;
         }
