@@ -25,7 +25,7 @@ public:
         argc(_argc), argv(_argv)
     {}
 
-    void startHttp()
+    void startHttp() const
     {
         taboo::Manager::instance()->start();
     }
@@ -37,7 +37,7 @@ public:
         server->send(hdl, reply->content, message->get_opcode());
     }
 
-    void startWs()
+    void startWs() const
     {
         Server server;
         server.set_message_handler(websocketpp::lib::bind(
@@ -66,7 +66,7 @@ public:
             || !taboo::Router::initialize());
     }
 
-    void start()
+    void start() const
     {
         boost::thread http(boost::bind(&Portal::startHttp, shared_from_this()));
         http.join();
