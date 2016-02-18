@@ -10,6 +10,7 @@ class DetachHandler:
     public BaseHandler,
     public taboo::HandlerCreator<DetachHandler>
 {
+    friend class taboo::Router;
 protected:
     enum {
         err_detach = 203001,
@@ -23,6 +24,7 @@ public:
         return res;
     }
 
+protected:
     static void initReplys() {}
 };
 

@@ -58,6 +58,8 @@ void Router::initHandlerRelyMap()
     manager::AttachHandler::initReplys();
     manager::DetachHandler::initReplys();
     query::BasePredicter::initReplys();
+    query::HttpPredicter::initReplys();
+    query::WsPredicter::initReplys();
 }
 
 SharedWsPredicter Router::route(Server::message_ptr message) const

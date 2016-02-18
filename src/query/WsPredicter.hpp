@@ -51,6 +51,9 @@ public:
         SharedWsPredicter predicter(new WsPredicter);
         return predicter;
     }
+
+protected:
+    static void initReplys() {}
 };
 
 }

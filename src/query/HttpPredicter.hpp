@@ -33,6 +33,9 @@ public:
         }
         return SharedReply(new Reply(predict(), mem_mode_must_copy));
     }
+
+protected:
+    static void initReplys() {}
 };
 
 }

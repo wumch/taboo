@@ -12,6 +12,7 @@ class AttachHandler:
     public taboo::HandlerCreator<AttachHandler>,
     private ManagerECAlloctor<2>
 {
+    friend class taboo::Router;
     using ManagerECAlloctor<2>::ECA;
 protected:
     enum {
@@ -88,7 +89,7 @@ protected:
         return keys;
     }
 
-public:
+protected:
     static void initReplys()
     {
         const_cast<SharedReply&>(okReply) = genReply(err_ok, "", mem_mode_persist);

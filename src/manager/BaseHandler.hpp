@@ -14,9 +14,6 @@
 #include "../Signer.hpp"
 
 namespace taboo  {
-
-class Router;
-
 namespace manager {
 
 template<ec_t handlerId>
@@ -28,7 +25,6 @@ class BaseHandler:
     public taboo::BaseHandler,
     private ManagerECAlloctor<0>
 {
-    friend class taboo::Router;
     using ManagerECAlloctor<0>::ECA;
 protected:
     enum {
