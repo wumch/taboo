@@ -59,7 +59,9 @@ public:
 };
 
 typedef std::vector<SharedItem> SharedItemList;
-typedef boost::unordered_map<id_t, SharedItem> Slot;
-typedef boost::unordered_map<id_t, Slot> SlotMap;
+
+typedef boost::unordered_map<id_t, SharedItem> ItemDict;
+typedef boost::unordered_map<id_t, id_t> Funnel;
+typedef boost::unordered_map<id_t, Funnel> FunnelDict;
 
 }

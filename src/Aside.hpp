@@ -68,7 +68,8 @@ public:
     ValuePtrSet queryVisibleFields, queryInvisibleFields;
     bool queryVisibleAll;
 
-    SlotMap slots;
+    ItemDict itemDict;
+    FunnelDict funnelDict;
 
     Farm farm;
 
@@ -114,7 +115,7 @@ private:
         keyQDPayload(config->keyQDPayload.data(), config->keyQDPayload.length()),
 
         queryVisibleAll(config->queryVisibleAll),
-        farm(slots)
+        farm(itemDict, funnelDict)
     {
         if (!queryVisibleAll) {
             if (!config->queryVisibleFields.empty() &&

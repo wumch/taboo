@@ -10,82 +10,79 @@ namespace taboo
 class Farm
 {
 private:
-    SlotMap& slots;
-    const Slot empty_slot;
-    const SharedItem dummy_item;
+    ItemDict& itemDict;
+    FunnelDict&funnelDict;
+    const Funnel emptyFunnel;
+    const SharedItem dummyItem;
 
 public:
-    explicit Farm(SlotMap& slot_map):
-        slots(slot_map)
+    explicit Farm(ItemDict& _itemDict, FunnelDict& _funnelDict):
+        itemDict(_itemDict), funnelDict(_funnelDict)
     {}
 
     bool attach(id_t id, const SharedItem& item, bool upsert = true)
     {
-        SlotMap::iterator it = slots.find(id);
-        if (it == slots.end()) {
-             it = slots.insert(std::make_pair(id, empty_slot)).first;
+        FunnelDict::iterator it = funnelDict.find(id);
+        if (it == funnelDict.end()) {
+             it = funnelDict.insert(std::make_pair(id, emptyFunnel)).first;
         }
-        Slot::iterator pos = it->second.find(item->id);
+        Funnel::iterator pos = it->second.find(item->id);
+        bool attached = false;
         if (pos == it->second.end()) {
-            it->second.insert(std::make_pair(item->id, item));
-            return true;
+            it->second.insert(std::make_pair(item->id, item->id));
+            attached = true;
         } else if (upsert) {
-            pos->second = item;
-            return true;
+            pos->second = item->id;
+            attached = true;
         }
-        return false;
+        if (attached) {
+            itemDict.insert(std::make_pair(item->id, item));
+        }
+        return attached;
     }
 
     bool detach(id_t id, const SharedItem& item)
     {
-        SlotMap::iterator it = slots.find(id);
-        if (it != slots.end())
+        FunnelDict::iterator it = funnelDict.find(id);
+        if (it != funnelDict.end())
         {
-            Slot::iterator pos = it->second.find(item->id);
+            Funnel::iterator pos = it->second.find(item->id);
             if (pos != it->second.end())
             {
                 it->second.erase(pos);
                 if (it->second.empty())
                 {
-                    slots.erase(it);
+                    funnelDict.erase(it);
                 }
                 return true;
             }
+            itemDict.erase(item->id);
         }
         return false;
     }
 
-    const Slot& slot(id_t id) const
+    const Funnel& funnel(id_t id) const
     {
         // todo: 加读锁
-        SlotMap::iterator it = slots.find(id);
-        return it == slots.end() ? empty_slot : it->second;
+        FunnelDict::iterator it = funnelDict.find(id);
+        return it == funnelDict.end() ? emptyFunnel : it->second;
     }
 
     const SharedItem& item(id_t id) const
     {
-        SlotMap::iterator it = slots.find(id);
-        if (it != slots.end())
+        FunnelDict::iterator it = funnelDict.find(id);
+        if (it != funnelDict.end())
         {
-            Slot::const_iterator pos = it->second.find(id);
+            Funnel::const_iterator pos = it->second.find(id);
             if (pos != it->second.end())
             {
-                return pos->second;
+                ItemDict::const_iterator itItem = itemDict.find(pos->second);
+                if (CS_BLIKELY(itItem != itemDict.end())) {
+                    return itItem->second;
+                }
             }
         }
-        return dummy_item;
-    }
-
-private:
-    bool insert(Slot& slot, const SharedItem& item) const
-    {
-        Slot::iterator pos = slot.find(item->id);
-        if (pos == slot.end())
-        {
-            slot.insert(std::make_pair(item->id, item));
-            return true;
-        }
-        return false;
+        return dummyItem;
     }
 };
 

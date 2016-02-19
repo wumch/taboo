@@ -61,22 +61,23 @@ private:
             seeker(_seeker), maxMatch(_maxMatch), iterated(0)
         {}
 
-        bool operator()(id_t slotId) const
+        bool operator()(id_t funnelId) const
         {
-            return Config::instance()->maxIterations < ++iterated ? false : pump(slotId);
+            return Config::instance()->maxIterations < ++iterated ? false : pump(funnelId);
         }
 
     private:
-        bool pump(id_t slotId) const
+        bool pump(id_t funnelId) const
         {
-            const Slot& slot = seeker->farm.slot(slotId);
-            if (!slot.empty()) {
-                for (Slot::const_iterator it = slot.begin(); it != slot.end(); ++it) {
+            const Funnel& funnel = seeker->farm.funnel(funnelId);
+            if (!funnel.empty()) {
+                for (Funnel::const_iterator it = funnel.begin(); it != funnel.end(); ++it) {
                     if (seeker->items.size() < maxMatch) {
-                        if (recorded.find(it->second->id) == recorded.end()) {
-                            if (seeker->filter.apply(it->second)) {
-                                recorded.insert(it->second->id);
-                                seeker->items.push_back(it->second);
+                        if (recorded.find(it->second) == recorded.end()) {
+                            const SharedItem& item = seeker->farm.item(it->second);
+                            if (seeker->filter.apply(item)) {
+                                recorded.insert(item->id);
+                                seeker->items.push_back(item);
                             }
                         }
                     }

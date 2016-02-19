@@ -34,12 +34,12 @@ public:
         bool attached = false;
         for (KeyList::const_iterator it = keys.begin(); it != keys.end(); ++it) {
             std::size_t nodePos = 0, keyPos = 0;
-            id_t slotId = da.traverse(it->data(), nodePos, keyPos, it->length());
-            if (slotId == no_value || slotId == no_path) {
-                slotId = da.update(it->data(), it->length(), id);
+            id_t funnelId = da.traverse(it->data(), nodePos, keyPos, it->length());
+            if (funnelId == no_value || funnelId == no_path) {
+                funnelId = da.update(it->data(), it->length(), id);
                 attached = true;
             }
-            cb(slotId);
+            cb(funnelId);
         }
         CS_DUMP(da.size());
         return attached;
@@ -65,20 +65,20 @@ public:
     void traverse(const std::string& key, Callback& cb) const
     {
         std::size_t nodePos = 0, keyPos = 0;
-        id_t slogId = da.traverse(key.data(), nodePos, keyPos, key.length());
-        if (slogId != no_path) {
-            if (slogId != no_value) {
-                if (!cb(slogId)) {
+        id_t funnelId = da.traverse(key.data(), nodePos, keyPos, key.length());
+        if (funnelId != no_path) {
+            if (funnelId != no_value) {
+                if (!cb(funnelId)) {
                     return;
                 }
             }
             std::size_t root = nodePos;
-            slogId = da.begin(nodePos, keyPos);
-            while (slogId != no_path) {
-                if (!cb(slogId)) {
+            funnelId = da.begin(nodePos, keyPos);
+            while (funnelId != no_path) {
+                if (!cb(funnelId)) {
                     return;
                 }
-                slogId = da.next(nodePos, keyPos, root);
+                funnelId = da.next(nodePos, keyPos, root);
             }
         }
     }
