@@ -75,7 +75,7 @@ private:
                     if (seeker->items.size() < maxMatch) {
                         if (recorded.find(it->second) == recorded.end()) {
                             const SharedItem& item = seeker->farm.item(it->second);
-                            if (seeker->filter.apply(item)) {
+                            if (item && seeker->filter.apply(item)) {
                                 recorded.insert(item->id);
                                 seeker->items.push_back(item);
                             }
