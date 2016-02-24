@@ -28,7 +28,7 @@ class Test(object):
         info = line.split('\t')
         item = {
             'id': int(info[1]),
-            'we_account_id': info[0],
+            'we_account_id': int(info[0]),
             'name': info[2],
         }
         if len(info) == 6:
