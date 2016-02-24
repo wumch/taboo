@@ -39,7 +39,7 @@ public:
     {
         AttachCallback cb(farm, item, upsertItem);
         WriteLock lock(Aside::instance()->accessMutex);
-        return (trie.attach(keys, item->id, cb) && cb.attached) || upsertItem;
+        return (trie.attach(keys, cb) && cb.attached) || upsertItem;
     }
 
     bool update_item(const std::string& key, const SharedItem& item)
@@ -81,7 +81,7 @@ private:
         mutable bool attached;
 
         AttachCallback(Farm& _farm, const SharedItem& _item, bool _upsert):
-            farm(_farm), item(_item), upsert(_upsert)
+            farm(_farm), item(_item), upsert(_upsert), attached(false)
         {}
 
         void operator()(id_t id) const
@@ -101,9 +101,9 @@ private:
             farm(_farm), item(_item)
         {}
 
-        void operator()(id_t id) const
+        void operator()(id_t funnelId) const
         {
-            farm.attach(id, item);
+            farm.attach(funnelId, item);
         }
     };
 };

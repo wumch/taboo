@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #coding:utf-8
 
 from taboo.client import Client
@@ -20,7 +21,7 @@ class Test(object):
         for line in open(self.dataFile):
             self._processLine(line)
             n += 1
-            if n > 100000:
+            if n > 10000:
                 break
 
     def _processLine(self, line):

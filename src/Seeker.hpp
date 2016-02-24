@@ -70,12 +70,17 @@ private:
         bool pump(id_t funnelId) const
         {
             const Funnel& funnel = seeker->farm.funnel(funnelId);
+            CS_DUMP(funnel.size());
             if (!funnel.empty()) {
                 for (Funnel::const_iterator it = funnel.begin(); it != funnel.end(); ++it) {
+                    CS_DUMP(it->second);
                     if (seeker->items.size() < maxMatch) {
                         if (recorded.find(it->second) == recorded.end()) {
+                            CS_SAY("not recorded");
                             const SharedItem& item = seeker->farm.item(it->second);
+                            CS_DUMP(!!item);
                             if (item && seeker->filter.apply(item)) {
+                                CS_DUMP(item->id);
                                 recorded.insert(item->id);
                                 seeker->items.push_back(item);
                             }
@@ -83,6 +88,7 @@ private:
                     }
                 }
             }
+            CS_DUMP(seeker->items.size());
             return seeker->items.size() < maxMatch;
         }
     };

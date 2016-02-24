@@ -11,7 +11,7 @@ class Farm
 {
 private:
     ItemDict& itemDict;
-    FunnelDict&funnelDict;
+    FunnelDict& funnelDict;
     const Funnel emptyFunnel;
     const SharedItem dummyItem;
 
@@ -20,11 +20,11 @@ public:
         itemDict(_itemDict), funnelDict(_funnelDict)
     {}
 
-    bool attach(id_t id, const SharedItem& item, bool upsert = true)
+    bool attach(id_t funnelId, const SharedItem& item, bool upsert = true)
     {
-        FunnelDict::iterator it = funnelDict.find(id);
+        FunnelDict::iterator it = funnelDict.find(funnelId);
         if (it == funnelDict.end()) {
-             it = funnelDict.insert(std::make_pair(id, emptyFunnel)).first;
+             it = funnelDict.insert(std::make_pair(funnelId, emptyFunnel)).first;
         }
         Funnel::iterator pos = it->second.find(item->id);
         bool attached = false;
@@ -70,19 +70,8 @@ public:
 
     const SharedItem& item(id_t id) const
     {
-        FunnelDict::iterator it = funnelDict.find(id);
-        if (it != funnelDict.end())
-        {
-            Funnel::const_iterator pos = it->second.find(id);
-            if (pos != it->second.end())
-            {
-                ItemDict::const_iterator itItem = itemDict.find(pos->second);
-                if (CS_BLIKELY(itItem != itemDict.end())) {
-                    return itItem->second;
-                }
-            }
-        }
-        return dummyItem;
+        ItemDict::const_iterator it = itemDict.find(id);
+        return it == itemDict.end() ? dummyItem : it->second;
     }
 };
 

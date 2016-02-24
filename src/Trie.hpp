@@ -23,22 +23,31 @@ private:
         no_value = 0x7fffffff - 1,
         no_path  = 0x7fffffff - 2,
     };
-    typedef cedar::da<id_t,no_value, no_path, false> DA;
+    typedef cedar::da<id_t, no_value, no_path, false> DA;
 
     DA da;
 
+    id_t funnelIdCursor;
+
 public:
+    Trie():
+        funnelIdCursor(0)
+    {}
+
     template<typename Callback>
-    bool attach(const KeyList& keys, id_t id, Callback& cb)
+    bool attach(const KeyList& keys, Callback& cb)
     {
         bool attached = false;
         for (KeyList::const_iterator it = keys.begin(); it != keys.end(); ++it) {
             std::size_t nodePos = 0, keyPos = 0;
             id_t funnelId = da.traverse(it->data(), nodePos, keyPos, it->length());
-            if (funnelId == no_value || funnelId == no_path) {
-                funnelId = da.update(it->data(), it->length(), id);
+            if (funnelId == no_path || funnelId == no_value) {
+                funnelId = newFunnelId();
+                da.update(it->data(), it->length(), funnelId);
+                CS_DUMP(da.exactMatchSearch<id_t>(it->c_str(), it->length()));
                 attached = true;
             }
+            CS_DUMP(funnelId);
             cb(funnelId);
         }
         CS_DUMP(da.size());
@@ -87,6 +96,12 @@ public:
     {
         int64_t id = da.exactMatchSearch<id_t>(key.data(), key.length());
         return (id == no_value) ? 0 : id;
+    }
+
+protected:
+    id_t newFunnelId()
+    {
+        return ++funnelIdCursor;
     }
 };
 
