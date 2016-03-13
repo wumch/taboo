@@ -10,7 +10,7 @@ data='key=fsdfdsf&sign=6970bd0208c684fe6f4fdd373c9d0382&prefixes=["abcdefg","晕
 tmpfile=/dev/shm/taboo.post.data
 echo "${data}" > "${tmpfile}"
 
-#ab -c 10 -n 100 -T 'application/x-www-form-urlencoded' -p "${tmpfile}" "${url}"
+ab -c 10 -n 10000 -T 'application/x-www-form-urlencoded' -p "${tmpfile}" "${url}"
 
 echo '\n------------------------------------------------'
 curl -v -d "${data}" "${url}"
@@ -19,7 +19,7 @@ echo '\n------------------------------------------------'
 
 
 url='http://'${host}':1079/query/predict?data={"prefix":"heji","num":5,"filters":{"we_account_id":100100209}}'
-ab -c 10 -n 1000 "${url}"
+ab -c 10 -n 10000 "${url}"
 
 echo '\n------------------------------------------------'
 curl -v -g "${url}"
