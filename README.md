@@ -1,12 +1,14 @@
 ##taboo
 
-taboo is an HTTP/WebSocket based prefix predict server with user-customizeable property matching feature.
+`taboo` is an HTTP/WebSocket based `prefix predict` server with user-customizeable property matching feature.
+`taboo` is written in c++03 and makes use of `cedar`(an implementation of double array trie).
 
 ###current status:
 generally usable if you donot need some features such as `detach`(delete attached `prefixes` and `items` from `trie`).
 
 ###requirements:
 all requrements are shiped as `git submodule`.
++ boost
 + [RapidJSON](https://github.com/miloyip/rapidjson)
 + [websocketpp](https://github.com/zaphoyd/websocketpp)
 + [stage](https://github.com/wumch/stage)
