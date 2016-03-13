@@ -2,18 +2,23 @@
 
 taboo is an HTTP/WebSocket based prefix predict server with user-customizeable property matching feature.
 
+###current status:
+generally usable if you donot need some features such as `detach`(delete attached prefixes and items from trie).
+
 ###requirements:
 all requrements are shiped as `git submodule`.
-+ [RapidJSON](https://github.com/wumch/rapidjson.git)
-+ [websocketpp](https://github.com/wumch/websocketpp.git)
-+ [stage](https://github.com/wumch/stage.git)
++ [RapidJSON](https://github.com/miloyip/rapidjson)
++ [websocketpp](https://github.com/zaphoyd/websocketpp)
++ [stage](https://github.com/wumch/stage)
 + cmake >= 2.8
 
 ###installation:
 ```bash
 git clone git@github.com:wumch/taboo.git taboo
-mkdir taboo taboo/build
-cd taboo/build
+cd taboo
+git submodule update
+mkdir build
+cd build
 ln -s ../etc etc
 cmake ..
 make
@@ -24,6 +29,6 @@ make
 ```
 
 ###todo lists:
-+ detach implementation
-+ store/restore
-+ runtime reload
++ `detach` implementation
++ `store/restore`implementation
++ runtime `reload` implementation
