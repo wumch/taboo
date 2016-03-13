@@ -24,7 +24,6 @@ make
 ```
 
 ###todo lists:
-+ funnelId bug
 + detach implementation
 + store/restore
 + runtime reload
