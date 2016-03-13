@@ -39,4 +39,4 @@ make
 _ _ _
 
 
-contact [wumuch@gmail.com](mailto:wumuch@gmail.com) for suggestions or features requirements.
+contact [wumuch@gmail.com](mailto:wumuch@gmail.com) to submit suggestions or features tickets if you can not wait for issues processing.
