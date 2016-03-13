@@ -3,7 +3,7 @@
 taboo is an HTTP/WebSocket based prefix predict server with user-customizeable property matching feature.
 
 ###current status:
-generally usable if you donot need some features such as `detach`(delete attached prefixes and items from trie).
+generally usable if you donot need some features such as `detach`(delete attached `prefixes` and `items` from `trie`).
 
 ###requirements:
 all requrements are shiped as `git submodule`.
