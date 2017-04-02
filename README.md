@@ -34,9 +34,3 @@ make
 + `detach` implementation
 + `store/restore`implementation
 + runtime `reload` implementation
-
-
-_ _ _
-
-
-contact [wumuch@gmail.com](mailto:wumuch@gmail.com) to submit suggestions or features tickets if you can not wait for issues processing.
