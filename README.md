@@ -1,12 +1,12 @@
-##taboo
+## taboo
 
 `taboo` is an HTTP/WebSocket based `prefix predict` server with user-customizeable property matching feature.
 `taboo` is written in c++03 and makes use of `cedar`(an implementation of double array trie).
 
-###current status:
+### current status:
 generally usable if you donot need some features such as `detach`(delete attached `prefixes` and `items` from `trie`).
 
-###requirements:
+### requirements:
 all requrements are shiped as `git submodule`.
 + boost
 + [RapidJSON](https://github.com/miloyip/rapidjson)
@@ -14,7 +14,7 @@ all requrements are shiped as `git submodule`.
 + [stage](https://github.com/wumch/stage)
 + cmake >= 2.8
 
-###installation:
+### installation:
 ```bash
 git clone git@github.com:wumch/taboo.git taboo
 cd taboo
@@ -30,7 +30,7 @@ make
 ../tests/bentchmark.sh  # run bentchmark tests
 ```
 
-###todo lists:
+### todo lists:
 + `detach` implementation
 + `store/restore`implementation
 + runtime `reload` implementation
